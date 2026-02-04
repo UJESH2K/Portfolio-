@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #ffffff;
+  --color-accent: #ff4757;
+  /* Playful Red/Pink */
+  --color-secondary: #f1f2f6;
+  --font-sans: 'Inter', sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-primary);
+    color: #1e272e;
+    overflow: hidden;
+  }
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+canvas {
+  touch-action: none;
+}
