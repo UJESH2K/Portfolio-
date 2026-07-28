@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base ────────────────────────────────────────────────────────────── */
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: #0a0e14;
+  color: #e6edf3;
+  min-height: 100%;
+}
+
+body {
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Custom focus ring (Xbox-green) ──────────────────────────────────── */
+
+.focus-ring {
+  outline: none;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid #9bf00b;
+  outline-offset: 2px;
+  border-radius: 0.375rem;
+}
+
+/* ─── Console scrollbar (thin, neon thumb) ────────────────────────────── */
+
+.console-scroll::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.console-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.console-scroll::-webkit-scrollbar-thumb {
+  background: #1f2a3a;
+  border-radius: 4px;
+}
+.console-scroll::-webkit-scrollbar-thumb:hover {
+  background: #9bf00b;
+}
+
+/* Default scrollbar for the page */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0e14;
+}
+::-webkit-scrollbar-thumb {
+  background: #1f2a3a;
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9bf00b;
+}
