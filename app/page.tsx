@@ -1,25 +1,57 @@
-// app/page.tsx — the console dashboard. Composes every section in order.
+import SmoothScroll from "@/components/site/SmoothScroll";
+import RevealObserver from "@/components/studio/RevealObserver";
+import Preloader from "@/components/studio/Preloader";
+import Chrome from "@/components/studio/Chrome";
+import Hero from "@/components/studio/Hero";
+import IdleDoodles from "@/components/studio/IdleDoodles";
+import RobotLayer from "@/components/studio/robot/RobotLayer";
+import Signals from "@/components/studio/sections/Signals";
+import Statement from "@/components/studio/sections/Statement";
+import Story from "@/components/studio/sections/Story";
+import BuildOrbit from "@/components/studio/sections/BuildOrbit";
+import Skills from "@/components/studio/sections/Skills";
+import SelectedWork from "@/components/studio/sections/SelectedWork";
+import About from "@/components/studio/sections/About";
+import Experience from "@/components/studio/sections/Experience";
+import Wins from "@/components/studio/sections/Wins";
+import Research from "@/components/studio/sections/Research";
+import Feed from "@/components/studio/sections/Feed";
+import OffClock from "@/components/studio/sections/OffClock";
+import Faq from "@/components/studio/sections/Faq";
+import Footer from "@/components/studio/sections/Footer";
+import { getPosts } from "@/lib/getContent";
 
-import { ConsoleLegend } from "@/components/console/ConsoleLegend";
-import { FeaturedTile } from "@/components/console/FeaturedTile";
-import { FriendsSection } from "@/components/console/FriendsSection";
-import { RecommendedSection } from "@/components/console/RecommendedSection";
-import { SettingsPanel } from "@/components/console/SettingsPanel";
-import { SocialFooter } from "@/components/console/SocialFooter";
-import { TopBar } from "@/components/console/TopBar";
-import { WhatsNewSection } from "@/components/console/WhatsNewSection";
+export const revalidate = 60;
 
-export default function Page() {
+export default async function Home() {
+  const posts = await getPosts();
+
   return (
-    <main className="flex min-h-screen flex-col bg-bg text-text-primary">
-      <TopBar />
-      <FeaturedTile />
-      <WhatsNewSection />
-      <FriendsSection />
-      <RecommendedSection />
-      <SettingsPanel />
-      <SocialFooter />
-      <ConsoleLegend />
-    </main>
+    <div className="site">
+      <SmoothScroll />
+      <RevealObserver />
+      <Preloader />
+      <Chrome />
+      <RobotLayer />
+      <IdleDoodles />
+
+      <Hero />
+      <main id="main" className="paper">
+        <Signals />
+        <Statement />
+        <Story />
+        <BuildOrbit />
+        <Skills />
+        <SelectedWork />
+        <About />
+        <Experience />
+        <Wins />
+        <Research />
+        <Feed posts={posts} />
+        <OffClock />
+        <Faq />
+        <Footer />
+      </main>
+    </div>
   );
 }

@@ -1,9 +1,12 @@
-# Console Portfolio
+# Ujesh Kumar Yadav — Portfolio
 
-A gaming-console-aesthetic portfolio (Xbox / Steam Deck / PS5 inspired).
-First pass = static console dashboard / main menu. No animations, no backend.
+A single-page portfolio whose structure and motion follow
+[juncastudio.com](https://juncastudio.com/), opened by a comic-book landing
+page with a 3D robot that talks in speech balloons and walks visitors
+through the site.
 
-**Stack:** Next.js 14 (App Router) · TypeScript · Tailwind CSS 3 · lucide-react · zustand
+**Stack:** Next.js 14 (App Router) · TypeScript · React Three Fiber + drei ·
+GSAP · Lenis · plain CSS (`app/site.css`) · Tailwind (for `/admin` only)
 
 ## Getting started
 
@@ -14,35 +17,82 @@ npm run dev
 
 Open <http://localhost:3000>.
 
-## Scripts
-
 | Command | Purpose |
 | --- | --- |
-| `npm run dev` | Start dev server |
+| `npm run dev` | Start the dev server |
 | `npm run build` | Production build |
-| `npm run start` | Run production build |
 | `npm run typecheck` | TypeScript check |
 | `npm run lint` | ESLint |
 
-## Project layout
-
-```
-app/                  Next.js App Router (layout, page, globals.css)
-components/console/   Dashboard sections (TopBar, FeaturedTile, etc.)
-lib/                  types.ts, data.ts, utils.ts
-legacy/               Old assets preserved from the previous Vite site
-```
-
 ## Editing content
 
-All sample content lives in [`lib/data.ts`](./lib/data.ts). Personal facts
-are clearly marked `TODO` so you can swap them in for real data.
+All copy lives in [`lib/content.ts`](./lib/content.ts), in the
+**STUDIO SITE** block near the end. Components never hold copy of their own.
 
-## Roadmap
+| What | Export |
+| --- | --- |
+| Landing balloons, caption, Tingle lines | `LANDING` |
+| "The story so far" chapters | `STORY` |
+| Selected work cards | `WORK` |
+| Experience cards | `ROLES` |
+| Wins stage | `WINS`, `STATS` |
+| Research strip | `RESEARCH` |
+| Highlighted LinkedIn / X / Instagram posts | `SOCIAL_POSTS` |
+| What the robot says per section | `ROBOT_LINES` |
 
-- [ ] Frame-by-frame scroll intro (video → frames → landing)
-- [ ] `/admin` route for adding achievements / projects
-- [ ] Mini-games section (Easter eggs)
-- [ ] Sound effects (Xbox / PS5 / Steam cues)
-- [ ] Contact form with mail backend
-- [ ] Console controller support (D-pad navigation)
+Anything not yet known is marked `NEEDS_INPUT` and hidden by the UI:
+
+```bash
+grep -n NEEDS_INPUT lib/content.ts
+```
+
+Still to fill in: X and Facebook profile URLs (`SOCIALS`), post URLs for
+`SOCIAL_POSTS`, the résumé PDF at `public/resume.pdf`, and a portrait photo
+(`ABOUT.portrait`).
+
+## Adding a highlighted post
+
+Add an entry to `SOCIAL_POSTS`:
+
+```ts
+{ platform: "linkedin", url: "https://www.linkedin.com/posts/…", caption: "Won Inception!", date: "Jun 2026" }
+```
+
+Posts added from `/admin` appear in the same strip once Supabase is
+configured.
+
+## Images
+
+Photos used by the site are WebP pairs in `public/media/` (`name-800.webp`
+and `name-1600.webp`); content entries reference the base path without the
+suffix, e.g. `"/media/win-inception"`. Original photos live in `images/`
+(git-ignored).
+
+## How the page is built
+
+- [`app/page.tsx`](./app/page.tsx) composes the sections in
+  [`components/studio/sections/`](./components/studio/sections/).
+- [`components/studio/Hero.tsx`](./components/studio/Hero.tsx) is the comic
+  landing page; "Tingle!" fades in the shader smoke
+  ([`HeroSmoke.tsx`](./components/studio/HeroSmoke.tsx)).
+- [`components/studio/robot/`](./components/studio/robot/) holds the robot:
+  `RobotScene.tsx` (one fixed canvas; clip windows, expressions, cursor
+  tracking, jumps), `RobotLayer.tsx` (speech balloon, click menu, section
+  cues, idle nudges) and `sfx.ts` (synthesised sounds, off by default).
+  Shared state is in [`lib/robot.ts`](./lib/robot.ts).
+- Sections cue the robot with a `data-cue="key"` attribute matching a key in
+  `ROBOT_LINES`.
+- [`IdleDoodles.tsx`](./components/studio/IdleDoodles.tsx) draws the
+  hand-drawn hint arrows, ported from the NEXR site.
+
+The previous 3D homepage is preserved in `legacy/universe-homepage-2026-09/`
+and its components remain in `components/site/`.
+
+## Credits
+
+- 3D robot: ["Robot Playground"](https://sketchfab.com/3d-models/robot-playground-59fc99d8dcb146f3a6c16dbbcc4680da)
+  by Hadrien59, licensed [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/).
+  Optimised with gltf-transform; the credit must stay visible on the site
+  (footer and FAQ).
+- Fonts: Cabinet Grotesk (Fontshare, ITF Free Font License), Geist and Geist
+  Mono (OFL), Bangers (OFL).

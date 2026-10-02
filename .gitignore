@@ -40,3 +40,15 @@ next-env.d.ts
 !.vscode/extensions.json
 .idea
 *.swp
+# large local source assets — keep them out of the deploy bundle
+/public/models/virtual-city.glb
+/character_01.mb
+*.mb
+
+# scratch Spline scaffold, superseded by components/room
+/spline-portfolio/
+
+# raw source photos/videos (originals, duplicates, unweb-usable .ARW raw
+# files) — processed, resized copies actually used by the site live under
+# /public/work, /public/hackathons, /public/gallery, /public/reel instead.
+/images/

@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Theme: ink void, paper accents ─────────────────────────────────────
+   The site is one continuous dark scene (Universe, a fixed R3F canvas)
+   that every content panel scrolls over — so the page is dark-by-default
+   now, not paper-white with occasional dark sections. */
+
+:root {
+  --paper: #ffffff;
+  --ink: #08080a;
+  --ash: #9a9aa2;
+  --hair: rgba(255, 255, 255, 0.12);
+  --edge: rgba(255, 255, 255, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  /* Lenis drives scrolling; native smooth would fight it. */
+  scroll-behavior: auto;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--ink);
+  color: var(--paper);
+  overscroll-behavior-y: none;
+}
+
+body {
+  font-family: var(--font-tight), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* Lenis */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* ─── Type helpers ───────────────────────────────────────────────────── */
+
+.mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.serif {
+  font-family: var(--font-serif), Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* Display type: very tight, very large — a distinct geometric face from the
+   body copy, not the same font pulling double duty. */
+.display {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+
+/* ─── Structural ─────────────────────────────────────────────────────── */
+
+.rule {
+  border-top: 1px solid var(--hair);
+}
+
+/* A translucent card that lets the fixed 3D backdrop show through while
+   staying readable — the primary content-panel treatment across chapters. */
+.glass {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+/* ─── Reveal primitives (GSAP/Framer Motion toggle these) ────────────── */
+
+.mask-line {
+  display: block;
+  overflow: hidden;
+}
+
+.will-move {
+  will-change: transform;
+}
+
+/* Hide scrollbar on horizontal strips without losing wheel scroll. */
+.no-bar {
+  scrollbar-width: none;
+}
+.no-bar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .will-move {
+    will-change: auto;
+  }
+}

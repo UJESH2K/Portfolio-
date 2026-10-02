@@ -1,0 +1,117 @@
+"use client";
+
+import { create } from "zustand";
+import type { BalloonChip, RobotCorner, RobotMood } from "@/lib/content";
+
+/**
+ * One store for the robot, shared by the 3D scene, the speech balloon, the
+ * click target and every section that cues it.
+ *
+ * React state holds only what changes a few times a minute (what it says,
+ * where it lives). Anything that changes per frame — the robot's projected
+ * screen position — lives in `robotScreen`, a plain mutable object the scene
+ * writes and the DOM overlays read inside their own rAF loops, so nothing
+ * re-renders at 60fps.
+ */
+
+export type RobotMode = "hero" | "companion";
+
+export type Speech = {
+  /** Bumped on every new line so the balloon can re-run its entrance. */
+  key: number;
+  text: string;
+  chips?: BalloonChip[];
+  /** "menu" lines stay up until dismissed; "line" lines time out. */
+  kind: "line" | "menu";
+};
+
+type RobotState = {
+  /** The preloader has lifted; the hero can start its entrance. */
+  introDone: boolean;
+  /** 0..1 load progress of the robot model, shown by the preloader. */
+  progress: number;
+  ready: boolean;
+  mode: RobotMode;
+  corner: RobotCorner;
+  mood: RobotMood;
+  /** Increments to ask the scene to play the current mood again. */
+  moodTick: number;
+  speech: Speech | null;
+  tingle: boolean;
+  muted: boolean;
+  hidden: boolean;
+  setIntroDone: () => void;
+  setProgress: (p: number) => void;
+  setReady: () => void;
+  setMode: (mode: RobotMode) => void;
+  say: (text: string, opts?: { mood?: RobotMood; chips?: BalloonChip[]; kind?: Speech["kind"]; corner?: RobotCorner }) => void;
+  hush: () => void;
+  setTingle: (on: boolean) => void;
+  toggleMuted: () => void;
+  setHidden: (hidden: boolean) => void;
+};
+
+let speechKey = 0;
+
+export const useRobot = create<RobotState>((set) => ({
+  introDone: false,
+  progress: 0,
+  ready: false,
+  mode: "hero",
+  corner: "br",
+  mood: "wave",
+  moodTick: 0,
+  speech: null,
+  tingle: false,
+  muted: true,
+  hidden: false,
+  setIntroDone: () => set({ introDone: true }),
+  setProgress: (progress) => set({ progress }),
+  setReady: () => set({ ready: true, progress: 1 }),
+  setMode: (mode) => set({ mode }),
+  say: (text, opts = {}) =>
+    set((s) => ({
+      speech: { key: ++speechKey, text, chips: opts.chips, kind: opts.kind ?? (opts.chips ? "menu" : "line") },
+      mood: opts.mood ?? s.mood,
+      moodTick: s.moodTick + 1,
+      corner: opts.corner ?? s.corner,
+    })),
+  hush: () => set({ speech: null }),
+  setTingle: (tingle) => set({ tingle }),
+  toggleMuted: () => set((s) => ({ muted: !s.muted })),
+  setHidden: (hidden) => set((s) => ({ hidden, speech: hidden ? null : s.speech })),
+}));
+
+/** Written by the scene every frame, read by DOM overlays. CSS pixels. */
+export const robotScreen = {
+  visible: false,
+  /** Centre of the head. */
+  headX: 0,
+  headY: 0,
+  /** Bounding box of the whole robot. */
+  left: 0,
+  top: 0,
+  width: 0,
+  height: 0,
+  /** Which side of the screen it stands on, for balloon placement. */
+  side: "right" as "left" | "right",
+};
+
+/** Smooth-scroll to an in-page anchor through Lenis when it is running. */
+export function goTo(href: string) {
+  if (typeof window === "undefined") return;
+  if (!href.startsWith("#")) {
+    window.open(href, "_blank", "noopener");
+    return;
+  }
+  const target = href === "#top" ? 0 : document.querySelector(href);
+  if (target === null) return;
+  const lenis = (window as unknown as { __lenis?: { scrollTo: (t: unknown, o?: unknown) => void } }).__lenis;
+  if (lenis) {
+    lenis.scrollTo(target, { offset: 0, duration: 1.6 });
+  } else if (target === 0) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } else {
+    (target as HTMLElement).scrollIntoView({ behavior: "smooth" });
+  }
+}
