@@ -37,7 +37,6 @@ type RobotState = {
   /** Increments to ask the scene to play the current mood again. */
   moodTick: number;
   speech: Speech | null;
-  tingle: boolean;
   muted: boolean;
   hidden: boolean;
   setIntroDone: () => void;
@@ -46,7 +45,6 @@ type RobotState = {
   setMode: (mode: RobotMode) => void;
   say: (text: string, opts?: { mood?: RobotMood; chips?: BalloonChip[]; kind?: Speech["kind"]; corner?: RobotCorner }) => void;
   hush: () => void;
-  setTingle: (on: boolean) => void;
   toggleMuted: () => void;
   setHidden: (hidden: boolean) => void;
 };
@@ -62,7 +60,6 @@ export const useRobot = create<RobotState>((set) => ({
   mood: "wave",
   moodTick: 0,
   speech: null,
-  tingle: false,
   muted: true,
   hidden: false,
   setIntroDone: () => set({ introDone: true }),
@@ -77,7 +74,6 @@ export const useRobot = create<RobotState>((set) => ({
       corner: opts.corner ?? s.corner,
     })),
   hush: () => set({ speech: null }),
-  setTingle: (tingle) => set({ tingle }),
   toggleMuted: () => set((s) => ({ muted: !s.muted })),
   setHidden: (hidden) => set((s) => ({ hidden, speech: hidden ? null : s.speech })),
 }));

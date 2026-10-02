@@ -132,8 +132,9 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.35;
-  mix-blend-mode: multiply;
+  /* No blend mode: blending a page-tall layer costs a frame now and then
+     while scrolling; plain low-opacity grain looks the same on paper. */
+  opacity: 0.22;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.45  0 0 0 0 0.42  0 0 0 0 0.38  0 0 0 0.22 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
 
@@ -1549,7 +1550,8 @@
   object-fit: cover;
   transform: scale(1.12);
   transition: transform 7s linear;
-  filter: saturate(0.9) contrast(1.05);
+  /* Its own layer, so the slow zoom never repaints the full-screen photo. */
+  will-change: transform;
 }
 .wins__slide.is-on img {
   transform: scale(1);
@@ -2452,183 +2454,55 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Comic-book landing page
-   Calm: paper, halftone, inked panels. Tingle: red-black smoke, shake.
+   Landing page, speech bubbles, the robot's controls, idle doodles and
+   "the story so far". Red-black smoke, one robot, no comic styling.
    ═══════════════════════════════════════════════════════════════════════ */
-
-:root {
-  --font-c: var(--font-comic), "Impact", "Arial Black", sans-serif;
-  --comic-ink: #0d0d0d;
-  --comic-yellow: #ffd23f;
-  --panel-border: 3px;
-}
-
-.hero.comic {
-  background: var(--paper);
-  color: var(--ink);
-  transition:
-    background 0.8s var(--ease),
-    color 0.6s var(--ease);
-}
-.hero.comic.is-tingle {
-  background: var(--black);
-  color: var(--white);
-}
 
 .hero__smoke {
   opacity: 0;
-  transition: opacity 1.2s var(--ease);
+  transition: opacity 1.4s var(--ease);
 }
 .hero__smoke.is-on {
   opacity: 1;
 }
 
-.comic__halftone {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image: radial-gradient(circle, rgba(13, 13, 13, 0.16) 1.15px, transparent 1.5px);
-  background-size: 10px 10px;
-  -webkit-mask-image: radial-gradient(ellipse 60% 70% at 74% 58%, #000 0%, transparent 70%);
-  mask-image: radial-gradient(ellipse 60% 70% at 74% 58%, #000 0%, transparent 70%);
-  transition: opacity 0.8s var(--ease);
-}
-.is-tingle .comic__halftone {
-  background-image: radial-gradient(circle, rgba(255, 90, 31, 0.45) 1.2px, transparent 1.6px);
-  opacity: 0.55;
-}
-
-/* The page of panels */
-.comic__page {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-}
-.comic__page.is-shaking {
-  animation: comic-shake 0.75s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-}
-@keyframes comic-shake {
-  10%,
-  90% {
-    transform: translate3d(-2px, 1px, 0) rotate(-0.2deg);
-  }
-  20%,
-  80% {
-    transform: translate3d(4px, -2px, 0) rotate(0.3deg);
-  }
-  30%,
-  50%,
-  70% {
-    transform: translate3d(-7px, 2px, 0) rotate(-0.4deg);
-  }
-  40%,
-  60% {
-    transform: translate3d(7px, -1px, 0) rotate(0.4deg);
-  }
-}
-.comic__stage {
-  position: absolute;
-  top: 118px;
-  bottom: 96px;
-  right: var(--gutter);
-  width: min(46vw, 760px);
-  border: var(--panel-border) solid var(--comic-ink);
-  background:
-    repeating-conic-gradient(from 0deg at 50% 78%, rgba(255, 90, 31, 0.07) 0deg 7deg, transparent 7deg 14deg),
-    linear-gradient(180deg, #fbf3e4 0%, #f6e3c8 100%);
-  transform: rotate(0.6deg);
-  box-shadow: 8px 8px 0 var(--comic-ink);
-  transition:
-    background 0.8s var(--ease),
-    border-color 0.6s,
-    box-shadow 0.6s;
-}
-.is-tingle .comic__stage {
-  border-color: var(--white);
-  background:
-    repeating-conic-gradient(from 0deg at 50% 78%, rgba(255, 60, 20, 0.16) 0deg 7deg, transparent 7deg 14deg),
-    rgba(20, 4, 2, 0.35);
-  box-shadow: 8px 8px 0 var(--ember);
-}
-.comic__burst {
-  position: absolute;
-  left: 50%;
-  bottom: 12%;
-  width: 70%;
-  aspect-ratio: 2 / 1;
-  transform: translateX(-50%);
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(255, 210, 63, 0.55), transparent);
-  filter: blur(6px);
-  opacity: 0.7;
-}
-.is-tingle .comic__burst {
-  background: radial-gradient(closest-side, rgba(255, 60, 20, 0.7), transparent);
-}
-.comic__strip {
-  display: none;
-}
-
-.comic__caption {
-  display: inline-block;
-  padding: 7px 12px 6px;
+.hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   margin-bottom: 22px;
-  background: var(--comic-yellow);
-  color: var(--comic-ink);
-  border: var(--panel-border) solid var(--comic-ink);
-  box-shadow: 4px 4px 0 var(--comic-ink);
-  font-family: var(--font-c);
-  font-size: clamp(18px, 1.6vw, 24px);
-  letter-spacing: 0.04em;
-  line-height: 1;
+  font-family: var(--font-m);
+  font-size: 12px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  transform: rotate(-1.2deg);
+  color: rgba(255, 255, 255, 0.62);
 }
-.is-tingle .comic__caption {
+.hero__eyebrow::before {
+  content: "";
+  width: 7px;
+  height: 7px;
   background: var(--ember);
-  color: var(--white);
-  box-shadow: 4px 4px 0 var(--white);
-  border-color: var(--white);
-  animation: caption-jolt 0.5s steps(2) 2;
-}
-@keyframes caption-jolt {
-  50% {
-    transform: rotate(1.5deg) scale(1.05);
-  }
 }
 
-.hero.comic .hero__content {
-  z-index: 3;
-  pointer-events: none;
-  bottom: clamp(88px, 13vh, 140px);
-}
-.hero.comic .hero__content > * {
-  pointer-events: auto;
-}
-.hero.comic .hero__title {
-  max-width: 7.6em;
-  font-size: clamp(46px, 6.4vw, 108px);
+.hero .hero__title {
+  /* Wraps as "Hello there, / I'm Ujesh." so the caret never sits alone on
+     an empty line. */
+  max-width: 6.9em;
   min-height: 1.9em;
 }
 .hero__lead {
-  color: var(--fg-2);
+  color: rgba(255, 255, 255, 0.7);
   opacity: 0;
   transform: translate3d(0, 16px, 0);
   transition:
     opacity 0.9s var(--ease),
-    transform 1s var(--ease),
-    color 0.6s;
-  max-width: 27em;
+    transform 1s var(--ease);
+  max-width: 29em;
 }
 .hero__lead.is-in {
   opacity: 1;
   transform: none;
 }
-.is-tingle .hero__lead {
-  color: rgba(255, 255, 255, 0.75);
-}
-
 .hero__actions {
   margin-top: 30px;
   display: flex;
@@ -2645,82 +2519,33 @@
   opacity: 1;
   transform: none;
 }
-
-.tingle-btn {
-  position: relative;
-  width: 168px;
-  height: 100px;
-  display: grid;
-  place-items: center;
-  color: var(--comic-ink) !important;
-  transition: transform 0.4s var(--spring);
-}
-.tingle-btn__burst {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-.tingle-btn__burst path {
-  fill: var(--comic-yellow);
-  stroke: var(--comic-ink);
-  stroke-width: 4;
-  stroke-linejoin: round;
-  transition: fill 0.3s;
-}
-.tingle-btn__label {
-  position: relative;
-  font-family: var(--font-c);
-  font-size: 30px;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  transform: rotate(-4deg);
-  text-shadow: 2px 2px 0 #fff;
-}
-.tingle-btn:not(.is-on) {
-  animation: tingle-pulse 2.4s var(--ease-inout) infinite;
-}
-@keyframes tingle-pulse {
-  0%,
-  100% {
-    transform: scale(1) rotate(0);
-  }
-  50% {
-    transform: scale(1.05) rotate(-2deg);
-  }
-}
-@media (hover: hover) {
-  .tingle-btn:hover {
-    transform: scale(1.1) rotate(3deg);
-    animation: none;
-  }
-  .tingle-btn:hover .tingle-btn__burst path {
-    fill: #fff;
-  }
-}
-.tingle-btn.is-on .tingle-btn__burst path {
-  fill: var(--white);
-  stroke: var(--ember);
-}
-.tingle-btn.is-on .tingle-btn__label {
-  font-size: 24px;
-  text-shadow: none;
-}
-
 .hero__next {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  padding: 12px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
   font-family: var(--font-m);
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  transition:
+    background 0.4s var(--ease),
+    color 0.4s var(--ease),
+    border-color 0.4s;
 }
 .hero__next svg {
   width: 12px;
   height: 12px;
   animation: nudge-down 1.6s var(--ease-inout) infinite;
+}
+@media (hover: hover) {
+  .hero__next:hover {
+    background: var(--white);
+    color: var(--ink);
+    border-color: var(--white);
+  }
 }
 @keyframes nudge-down {
   50% {
@@ -2728,7 +2553,7 @@
   }
 }
 
-/* ─── Comic speech balloon (robot) ──────────────────────────────────── */
+/* ─── Speech bubbles (the robot) ────────────────────────────────────── */
 
 .balloon {
   position: fixed;
@@ -2742,14 +2567,15 @@
 }
 .balloon__in {
   position: relative;
-  padding: 13px 18px 14px;
+  padding: 13px 17px 14px;
   background: var(--white);
-  color: var(--comic-ink);
-  border: 2.5px solid var(--comic-ink);
-  border-radius: 26px;
-  box-shadow: 5px 5px 0 rgba(13, 13, 13, 0.92);
+  color: var(--ink);
+  border-radius: 18px;
+  box-shadow:
+    0 22px 48px -22px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(0, 0, 0, 0.06);
   opacity: 0;
-  transform: scale(0.6) translate3d(0, 14px, 0);
+  transform: scale(0.7) translate3d(0, 12px, 0);
   transform-origin: var(--ox, 85%) 100%;
   transition:
     opacity 0.25s var(--ease),
@@ -2766,32 +2592,26 @@
   transform: none;
 }
 .balloon__text {
-  font-family: var(--font-c);
-  font-size: 21px;
-  letter-spacing: 0.035em;
-  line-height: 1.12;
-  text-transform: uppercase;
+  font-family: var(--font-h);
+  font-weight: 500;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
 }
 .balloon__ghost {
   visibility: hidden;
 }
 .balloon--hero {
-  max-width: min(380px, 80vw);
+  max-width: min(340px, 80vw);
 }
 .balloon--hero .balloon__text {
-  font-size: clamp(22px, 2vw, 30px);
-}
-.balloon--shout .balloon__in {
-  background: var(--comic-yellow);
-  border-radius: 6px;
-  border-width: 3px;
-  box-shadow: 6px 6px 0 var(--ember);
+  font-size: clamp(18px, 1.5vw, 21px);
 }
 .balloon__tail {
   position: absolute;
-  bottom: -24px;
-  width: 40px;
-  height: 30px;
+  bottom: -10px;
+  width: 22px;
+  height: 14px;
   overflow: visible;
   opacity: 0;
   transition: opacity 0.2s;
@@ -2801,18 +2621,12 @@
 }
 .balloon__tail path {
   fill: var(--white);
-  stroke: var(--comic-ink);
-  stroke-width: 2.5;
-  stroke-linejoin: round;
-}
-.balloon--shout .balloon__tail path {
-  fill: var(--comic-yellow);
 }
 .balloon--left .balloon__tail {
-  right: 34px;
+  right: 30px;
 }
 .balloon--right .balloon__tail {
-  left: 34px;
+  left: 30px;
   transform: scaleX(-1);
 }
 .balloon__chips {
@@ -2825,24 +2639,23 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 11px 6px;
+  padding: 7px 12px;
   font-family: var(--font-b);
-  font-weight: 600;
+  font-weight: 500;
   font-size: 13px;
   background: var(--paper);
-  color: var(--comic-ink);
-  border: 2px solid var(--comic-ink);
+  color: var(--ink);
+  border: 1px solid var(--line);
   border-radius: 999px;
-  box-shadow: 2px 2px 0 var(--comic-ink);
   opacity: 0;
-  transform: translate3d(0, 8px, 0) scale(0.9);
+  transform: translate3d(0, 8px, 0) scale(0.94);
   transition:
     opacity 0.3s var(--ease),
     transform 0.45s var(--spring),
     background 0.2s,
     color 0.2s,
-    box-shadow 0.2s;
-  transition-delay: calc(var(--i) * 0.06s);
+    border-color 0.2s;
+  transition-delay: calc(var(--i) * 0.05s);
 }
 .balloon__chips.is-in button {
   opacity: 1;
@@ -2854,9 +2667,8 @@
 @media (hover: hover) {
   .balloon__chips button:hover {
     background: var(--ember);
+    border-color: var(--ember);
     color: var(--white);
-    box-shadow: 3px 3px 0 var(--comic-ink);
-    transform: translate3d(-1px, -1px, 0);
   }
   .balloon__chips button:hover span {
     transform: translateX(3px);
@@ -2864,65 +2676,17 @@
 }
 .balloon__x {
   position: absolute;
-  top: -11px;
-  right: -11px;
-  width: 26px;
-  height: 26px;
+  top: -9px;
+  right: -9px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: var(--comic-ink) !important;
+  background: var(--ink) !important;
   color: var(--white) !important;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1;
   display: grid;
   place-items: center;
-}
-
-/* Alert lines around the head while the tingle is on */
-.tingle-lines {
-  position: fixed;
-  z-index: 41;
-  left: 0;
-  top: 0;
-  width: 1px;
-  height: 1px;
-  pointer-events: none;
-  overflow: visible;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.tingle-lines.is-on {
-  opacity: 1;
-}
-.tingle-lines path {
-  fill: none;
-  stroke: var(--comic-yellow);
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-dasharray: 40;
-  stroke-dashoffset: 40;
-}
-.tingle-lines.is-on path {
-  animation: tingle-zap 0.9s var(--ease) infinite;
-  animation-delay: calc(var(--i) * 0.04s);
-}
-@keyframes tingle-zap {
-  0% {
-    stroke-dashoffset: 40;
-    opacity: 0;
-  }
-  30% {
-    stroke-dashoffset: 0;
-    opacity: 1;
-  }
-  70% {
-    stroke-dashoffset: 0;
-    opacity: 1;
-  }
-  100% {
-    stroke-dashoffset: -40;
-    opacity: 0;
-  }
 }
 
 /* The chrome is white + difference everywhere; `.site a`/`.site button`
@@ -2938,13 +2702,12 @@
   z-index: 47;
   right: var(--gutter);
   bottom: 56px;
-  padding: 8px 12px;
+  padding: 8px 13px;
   border-radius: 999px;
-  background: var(--comic-ink) !important;
+  background: var(--ink) !important;
   color: var(--white) !important;
   font-size: 12px !important;
   font-weight: 500;
-  box-shadow: 3px 3px 0 var(--ember);
 }
 
 /* Sound switch sits at the right end of the bottom bar. */
@@ -2962,10 +2725,7 @@
   inset: 0;
   z-index: 48;
   pointer-events: none;
-  color: var(--ember-deep);
-}
-.doodles.is-tingle {
-  color: var(--comic-yellow);
+  color: var(--ember-2);
 }
 .doodles__hint {
   position: absolute;
@@ -2996,10 +2756,9 @@
   }
 }
 .doodles__label {
-  font-family: var(--font-c);
-  font-size: 20px;
-  letter-spacing: 0.03em;
-  text-transform: lowercase;
+  font-family: var(--font-h);
+  font-weight: 500;
+  font-size: 17px;
   white-space: nowrap;
 }
 .doodle .doodle-line {
@@ -3047,7 +2806,7 @@
   }
 }
 
-/* ─── The story so far (comic issues) ───────────────────────────────── */
+/* ─── The story so far ──────────────────────────────────────────────── */
 
 .story {
   padding: clamp(40px, 8vh, 100px) 0 clamp(100px, 14vh, 180px);
@@ -3063,7 +2822,8 @@
 .story__grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
 }
 .story__card {
   position: relative;
@@ -3071,66 +2831,68 @@
   flex-direction: column;
   gap: 10px;
   height: 100%;
-  min-height: 230px;
-  padding: 18px 18px 20px;
-  background: var(--white);
-  border: var(--panel-border) solid var(--comic-ink);
-  box-shadow: 5px 5px 0 var(--comic-ink);
-  transition:
-    transform 0.45s var(--spring),
-    box-shadow 0.45s var(--ease),
-    background 0.3s;
-}
-.story__cell:nth-child(odd) .story__card {
-  transform: rotate(-0.6deg);
-}
-.story__cell:nth-child(even) .story__card {
-  transform: rotate(0.5deg);
+  min-height: 240px;
+  padding: 20px 20px 22px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  transition: background 0.5s var(--ease);
+  isolation: isolate;
 }
 .story__card::before {
   content: "";
   position: absolute;
   inset: 0;
-  pointer-events: none;
-  background-image: radial-gradient(circle, rgba(255, 90, 31, 0.18) 1px, transparent 1.4px);
-  background-size: 8px 8px;
-  -webkit-mask-image: linear-gradient(135deg, transparent 55%, #000 100%);
-  mask-image: linear-gradient(135deg, transparent 55%, #000 100%);
+  z-index: -1;
+  background: var(--ink);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 0.6s var(--ease);
 }
 @media (hover: hover) {
+  .story__card:hover::before {
+    transform: scaleY(1);
+  }
   .story__card:hover {
-    transform: translate3d(-3px, -3px, 0) rotate(-1deg) !important;
-    box-shadow: 9px 9px 0 var(--ember);
-    background: #fffaf0;
+    color: var(--white);
+  }
+  .story__card:hover .story__text {
+    color: rgba(255, 255, 255, 0.7);
+  }
+  .story__card:hover .story__go {
+    color: var(--ember-2);
+    transform: translateX(4px);
   }
 }
 .story__issue {
-  align-self: flex-start;
-  padding: 3px 8px 2px;
-  background: var(--comic-yellow);
-  border: 2px solid var(--comic-ink);
-  font-family: var(--font-c);
-  font-size: 18px;
-  letter-spacing: 0.04em;
+  font-family: var(--font-m);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--ember-deep);
 }
 .story__title {
   font-family: var(--font-h);
-  font-weight: 700;
+  font-weight: 500;
   font-size: clamp(20px, 1.6vw, 25px);
   letter-spacing: -0.025em;
-  line-height: 1.05;
+  line-height: 1.08;
 }
 .story__text {
   font-size: 14.5px;
   line-height: 1.45;
   color: var(--fg-2);
+  transition: color 0.4s;
 }
 .story__go {
   margin-top: auto;
-  font-family: var(--font-c);
-  font-size: 17px;
-  letter-spacing: 0.04em;
-  color: var(--ember-deep);
+  font-family: var(--font-m);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  transition:
+    color 0.4s,
+    transform 0.5s var(--ease);
 }
 
 @media (max-width: 1100px) {
@@ -3140,47 +2902,30 @@
 }
 
 @media (max-width: 809px) {
-  .hero.comic {
+  /* On phones the robot stands at the top of the landing page (see
+     RobotScene targetFor), so the text starts below it. */
+  .hero {
     height: auto;
     min-height: 100svh;
     padding: calc(76px + 42svh + 22px) 0 72px;
   }
-  .comic__stage {
-    top: 76px;
-    bottom: auto;
-    height: 42svh;
-    left: var(--gutter);
-    right: var(--gutter);
-    width: auto;
-    transform: rotate(-0.4deg);
-    box-shadow: 5px 5px 0 var(--comic-ink);
-  }
-  .hero.comic .hero__content {
+  .hero .hero__content {
     position: relative;
     bottom: auto;
   }
-  .hero.comic .hero__title {
+  .hero .hero__title {
     font-size: clamp(40px, 11vw, 60px);
     min-height: 0;
+  }
+  .hero__eyebrow {
+    margin-bottom: 14px;
   }
   .hero__lead {
     font-size: 15px;
     margin-top: 14px;
   }
   .hero__actions {
-    margin-top: 16px;
-    gap: 18px;
-  }
-  .tingle-btn {
-    width: 130px;
-    height: 78px;
-  }
-  .tingle-btn__label {
-    font-size: 24px;
-  }
-  .comic__caption {
-    font-size: 16px;
-    margin-bottom: 12px;
+    margin-top: 18px;
   }
   .story__grid {
     grid-template-columns: 1fr;
@@ -3189,28 +2934,28 @@
     min-height: 0;
   }
   .balloon {
-    max-width: min(230px, 64vw);
+    max-width: min(240px, 66vw);
   }
   .balloon__in {
     padding: 10px 14px 11px;
-    border-radius: 20px;
+    border-radius: 16px;
   }
   .balloon__text {
-    font-size: 16px;
+    font-size: 15px;
   }
   .balloon--hero {
     max-width: min(330px, 86vw);
   }
   .balloon--hero .balloon__text {
-    font-size: 19px;
+    font-size: 17px;
   }
   .balloon__chips button {
     font-size: 12px;
-    padding: 6px 9px 5px;
+    padding: 6px 10px;
     flex-shrink: 0;
   }
-  /* In the landing panel the chips swipe sideways on one row, so the
-     balloon stays short and never covers the robot's face. */
+  /* On the landing the chips swipe sideways on one row, so the bubble
+     stays short and never covers the robot's face. */
   .balloon--hero .balloon__chips {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -3226,12 +2971,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .comic__page.is-shaking,
-  .tingle-btn,
   .doodles__float,
   .doodle .doodle-line,
   .doodle .doodle-head,
-  .tingle-lines.is-on path {
+  .hero__next svg {
     animation: none !important;
   }
   .doodle .doodle-line,

@@ -1,8 +1,8 @@
 # Ujesh Kumar Yadav — Portfolio
 
 A single-page portfolio whose structure and motion follow
-[juncastudio.com](https://juncastudio.com/), opened by a comic-book landing
-page with a 3D robot that talks in speech balloons and walks visitors
+[juncastudio.com](https://juncastudio.com/), with a 3D robot that greets
+visitors on the landing page, talks in speech bubbles and walks them
 through the site.
 
 **Stack:** Next.js 14 (App Router) · TypeScript · React Three Fiber + drei ·
@@ -31,7 +31,7 @@ All copy lives in [`lib/content.ts`](./lib/content.ts), in the
 
 | What | Export |
 | --- | --- |
-| Landing balloons, caption, Tingle lines | `LANDING` |
+| Landing eyebrow and the robot's opening lines | `LANDING` |
 | "The story so far" chapters | `STORY` |
 | Selected work cards | `WORK` |
 | Experience cards | `ROLES` |
@@ -72,9 +72,8 @@ suffix, e.g. `"/media/win-inception"`. Original photos live in `images/`
 
 - [`app/page.tsx`](./app/page.tsx) composes the sections in
   [`components/studio/sections/`](./components/studio/sections/).
-- [`components/studio/Hero.tsx`](./components/studio/Hero.tsx) is the comic
-  landing page; "Tingle!" fades in the shader smoke
-  ([`HeroSmoke.tsx`](./components/studio/HeroSmoke.tsx)).
+- [`components/studio/Hero.tsx`](./components/studio/Hero.tsx) is the landing
+  page over shader smoke ([`HeroSmoke.tsx`](./components/studio/HeroSmoke.tsx)).
 - [`components/studio/robot/`](./components/studio/robot/) holds the robot:
   `RobotScene.tsx` (one fixed canvas; clip windows, expressions, cursor
   tracking, jumps), `RobotLayer.tsx` (speech balloon, click menu, section
@@ -95,4 +94,4 @@ and its components remain in `components/site/`.
   Optimised with gltf-transform; the credit must stay visible on the site
   (footer and FAQ).
 - Fonts: Cabinet Grotesk (Fontshare, ITF Free Font License), Geist and Geist
-  Mono (OFL), Bangers (OFL).
+  Mono (OFL).

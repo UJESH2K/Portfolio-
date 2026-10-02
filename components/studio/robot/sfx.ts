@@ -50,9 +50,6 @@ export const sfx = {
   land() {
     blip(140, 0.16, "sine", 0.08, -60);
   },
-  tingle() {
-    for (let i = 0; i < 6; i++) setTimeout(() => blip(900 + i * 140, 0.07, "sawtooth", 0.02), i * 45);
-  },
   pop() {
     blip(700, 0.08, "sine", 0.05, 300);
   },

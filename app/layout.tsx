@@ -32,13 +32,6 @@ const mono = localFont({
   display: "swap",
 });
 
-// Comic lettering for the landing page's balloons and captions (Bangers, OFL).
-const comic = localFont({
-  src: "./fonts/bangers-latin.woff2",
-  weight: "400",
-  variable: "--font-comic",
-  display: "swap",
-});
 
 const description =
   "Ujesh Kumar Yadav — software engineer in Bengaluru building full-stack products, applied AI and distributed GPU systems. 7× hackathon winner, IMPACT-2027 paper.";
@@ -87,7 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${heading.variable} ${body.variable} ${mono.variable} ${comic.variable}`}
+      className={`${heading.variable} ${body.variable} ${mono.variable}`}
       suppressHydrationWarning
     >
       <body>

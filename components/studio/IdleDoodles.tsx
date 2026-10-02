@@ -37,10 +37,6 @@ const IDLE_DELAY = 5000;
 function measure(): Hint[] {
   const out: Hint[] = [];
   const w = window.innerWidth;
-  const tingle = document.querySelector(".tingle-btn")?.getBoundingClientRect();
-  if (tingle && tingle.width) {
-    out.push({ id: "tingle", label: "press this. trust me.", dir: "up-left", x: tingle.right + 6, y: tingle.bottom - 6, labelFirst: false });
-  }
   const chips = document.querySelector(".balloon--hero.is-on .balloon__chips")?.getBoundingClientRect();
   if (chips && chips.width && w >= 810) {
     out.push({ id: "chips", label: "pick a chapter", dir: "down-right", x: chips.left - 150, y: chips.top - 64, labelFirst: true });
@@ -55,7 +51,6 @@ function measure(): Hint[] {
 export default function IdleDoodles() {
   const introDone = useRobot((s) => s.introDone);
   const mode = useRobot((s) => s.mode);
-  const tingle = useRobot((s) => s.tingle);
   const [hints, setHints] = useState<Hint[]>([]);
   const [dismissed, setDismissed] = useState(false);
 
@@ -83,7 +78,7 @@ export default function IdleDoodles() {
   if (!hints.length) return null;
 
   return (
-    <div className={`doodles${tingle ? " is-tingle" : ""}`} aria-hidden="true">
+    <div className="doodles" aria-hidden="true">
       {hints.map((h, i) => (
         <div
           key={h.id}

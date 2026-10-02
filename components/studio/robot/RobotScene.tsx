@@ -73,6 +73,11 @@ function targetFor(key: "hero" | "br" | "bl", w: number, h: number) {
   return { x, y: h - (mobile ? 46 : 58), h: size, ry: key === "br" ? -0.38 : 0.38 };
 }
 
+/** How far the landing page has scrolled, capped once it is off screen. */
+function heroShift(vh: number) {
+  return Math.min(window.scrollY, vh * 1.5);
+}
+
 function Robot() {
   const gltf = useGLTF(MODEL_URL, false, true);
   const { size, camera } = useThree();
@@ -121,6 +126,10 @@ function Robot() {
     lookYaw: 0,
     lookPitch: 0,
     shakeUntil: 0,
+    // Lean from scroll speed, so the companion rides along instead of
+    // standing frozen while the page moves under it.
+    lean: 0,
+    lastScrollY: 0,
   });
   const place = useRef<Place>({ x: 0, y: 0, h: 0, rz: 0, sq: 1, hop: 0, ry: 0 });
   // Height of the posed robot (antennae to feet) in model units, measured on
@@ -174,7 +183,7 @@ function Robot() {
     return () => window.removeEventListener("pointermove", onMove);
   }, []);
 
-  // React to store changes: position (jumps), moods and the tingle.
+  // React to store changes: position (jumps) and moods.
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -184,6 +193,9 @@ function Robot() {
       const t = targetFor(key, w, h);
       const p = place.current;
       gsap.killTweensOf(p);
+      // On the landing the robot rides up with the page (see heroShift);
+      // when it leaves, start the leap from where it actually is on screen.
+      if (animate && posKey.current === "hero") p.y -= heroShift(h);
       posKey.current = key;
       if (!animate || reduced || p.h === 0) {
         Object.assign(p, { x: t.x, y: t.y, h: t.h, ry: t.ry, rz: 0, sq: 1, hop: 0 });
@@ -217,7 +229,6 @@ function Robot() {
     window.addEventListener("resize", onResize);
 
     let lastTick = useRobot.getState().moodTick;
-    let lastTingle = useRobot.getState().tingle;
     const unsub = useRobot.subscribe((s) => {
       const key = s.mode === "hero" ? "hero" : s.corner;
       if (s.mode !== lastMode || (s.mode === "companion" && s.corner !== lastCorner)) {
@@ -228,16 +239,6 @@ function Robot() {
       if (s.moodTick !== lastTick) {
         lastTick = s.moodTick;
         react(s.mood);
-      }
-      if (s.tingle !== lastTingle) {
-        lastTingle = s.tingle;
-        if (s.tingle) {
-          anim.current.shakeUntil = performance.now() + 900;
-          setFace({ eyes: "kawaii", mouth: "kawaii" }, 1400);
-          playSeg("think", { then: s.mode === "hero" ? "play" : "idle" });
-        } else {
-          playSeg("idle", { loop: true });
-        }
       }
     });
 
@@ -346,15 +347,27 @@ function Robot() {
 
     // ── Placement ───────────────────────────────────────────────────────
     const p = place.current;
+    // While it stands on the landing page it scrolls away with the page
+    // instead of hanging in place over the next section.
+    const yScreen = p.y - (posKey.current === "hero" ? heroShift(size.height) : 0);
     const cam = camera as THREE.PerspectiveCamera;
     const worldH = 2 * CAM_Z * Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
     const wpp = worldH / size.height;
     const scale = (p.h * wpp) / botH.current;
+    // Companion only: a slow hover, and a lean against the scroll direction.
+    const companion = posKey.current !== "hero";
+    const sy = window.scrollY;
+    const vel = (sy - a.lastScrollY) / Math.max(dt * 60, 1);
+    a.lastScrollY = sy;
+    const leanT = companion ? THREE.MathUtils.clamp(-vel * 0.006, -0.24, 0.24) : 0;
+    a.lean += (leanT - a.lean) * (1 - Math.exp(-dt * 5));
+    const bob = companion ? Math.sin(now / 620) * p.h * 0.018 : 0;
     let jitter = 0;
     if (now < a.shakeUntil) jitter = (Math.random() - 0.5) * p.h * 0.02;
-    g.position.set((p.x + jitter - size.width / 2) * wpp, (size.height / 2 - p.y) * wpp + p.hop * p.h * wpp, 0);
+    g.position.set((p.x + jitter - size.width / 2) * wpp, (size.height / 2 - yScreen) * wpp + p.hop * p.h * wpp, 0);
     g.scale.set(scale * (2 - p.sq) ** 0.5, scale * p.sq, scale * (2 - p.sq) ** 0.5);
-    g.rotation.set(0, p.ry, p.rz);
+    g.position.y += bob * wpp;
+    g.rotation.set(0, p.ry, p.rz + a.lean * (p.x > size.width / 2 ? 1 : -1));
     g.visible = !s.hidden && p.h > 0;
 
     // ── Look at the cursor ──────────────────────────────────────────────
@@ -389,11 +402,11 @@ function Robot() {
     }
 
     // ── Publish the screen box for the DOM overlays ─────────────────────
-    robotScreen.visible = g.visible && p.y > 0;
+    robotScreen.visible = g.visible && yScreen > 0;
     robotScreen.width = p.h * 0.72;
     robotScreen.height = p.h;
     robotScreen.left = p.x - robotScreen.width / 2;
-    robotScreen.top = p.y - p.h;
+    robotScreen.top = yScreen - p.h;
     robotScreen.side = p.x > size.width / 2 ? "right" : "left";
   });
 
@@ -405,19 +418,11 @@ function Robot() {
 }
 
 function Lights() {
-  const tingle = useRobot((s) => s.tingle);
-  const rim = useRef<THREE.DirectionalLight>(null);
-  useFrame(() => {
-    if (!rim.current) return;
-    const target = new THREE.Color(tingle ? "#ff2a0d" : "#ffb38a");
-    rim.current.color.lerp(target, 0.08);
-    rim.current.intensity += ((tingle ? 5 : 2.2) - rim.current.intensity) * 0.08;
-  });
   return (
     <>
       <hemisphereLight args={["#ffffff", "#3a2418", 1.15]} />
       <directionalLight position={[3, 5, 7]} intensity={2.1} />
-      <directionalLight ref={rim} position={[-5, 3, -4]} intensity={2.2} color="#ffb38a" />
+      <directionalLight position={[-5, 3, -4]} intensity={2.6} color="#ff8a5a" />
     </>
   );
 }

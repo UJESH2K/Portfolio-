@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Red-black smoke behind the landing page, shown only while the tingle is on.
+ * Red-black smoke behind the landing page.
  * A single fragment shader (domain-warped fbm) on a half-resolution canvas;
  * the browser's bilinear upscale is a free blur, which suits smoke. It stops
  * drawing entirely when hidden or scrolled away.

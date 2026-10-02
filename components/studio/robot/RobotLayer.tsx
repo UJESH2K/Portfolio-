@@ -38,7 +38,6 @@ function webglOk() {
 function Balloon() {
   const speech = useRobot((s) => s.speech);
   const mode = useRobot((s) => s.mode);
-  const tingle = useRobot((s) => s.tingle);
   const hush = useRobot((s) => s.hush);
   const ref = useRef<HTMLDivElement>(null);
   const [typed, setTyped] = useState("");
@@ -75,7 +74,8 @@ function Balloon() {
     const key = speech.key;
     const id = window.setTimeout(() => {
       if (useRobot.getState().speech?.key === key) hush();
-    }, Math.max(3200, speech.text.length * 60));
+      // Phones have less room, so lines clear sooner there.
+    }, window.innerWidth < 810 ? Math.max(2400, speech.text.length * 45) : Math.max(3200, speech.text.length * 60));
     return () => clearTimeout(id);
   }, [speech, done, hush]);
 
@@ -135,8 +135,8 @@ function Balloon() {
     <div
       ref={ref}
       className={`balloon balloon--${side === "left" ? "left" : "right"}${hero ? " balloon--hero" : ""}${
-        tingle && hero ? " balloon--shout" : ""
-      }${visible ? " is-on" : ""}`}
+        visible ? " is-on" : ""
+      }`}
       role="status"
       aria-live="polite"
     >
@@ -180,49 +180,6 @@ function Balloon() {
         <path d="M2 0 C 10 12, 22 22, 38 28 C 26 16, 22 8, 22 0 Z" />
       </svg>
     </div>
-  );
-}
-
-/** Alert lines around the head while the tingle is on. */
-function TingleLines() {
-  const tingle = useRobot((s) => s.tingle);
-  const mode = useRobot((s) => s.mode);
-  const ref = useRef<SVGSVGElement>(null);
-  useEffect(() => {
-    let raf = 0;
-    const loop = () => {
-      raf = requestAnimationFrame(loop);
-      const el = ref.current;
-      if (!el) return;
-      const size = robotScreen.height * 0.9;
-      el.style.width = `${size}px`;
-      el.style.height = `${size}px`;
-      el.style.transform = `translate3d(${robotScreen.headX - size / 2}px, ${robotScreen.headY - size / 2}px, 0)`;
-    };
-    loop();
-    return () => cancelAnimationFrame(raf);
-  }, []);
-  const lines = Array.from({ length: 10 }, (_, i) => {
-    const a = (i / 10) * Math.PI * 2 + 0.3;
-    const r1 = 30;
-    const r2 = 46;
-    const mx = Math.cos(a + 0.12) * ((r1 + r2) / 2);
-    const my = Math.sin(a + 0.12) * ((r1 + r2) / 2);
-    return `M${(Math.cos(a) * r1).toFixed(1)} ${(Math.sin(a) * r1).toFixed(1)} L${mx.toFixed(1)} ${my.toFixed(1)} L${(
-      Math.cos(a) * r2
-    ).toFixed(1)} ${(Math.sin(a) * r2).toFixed(1)}`;
-  });
-  return (
-    <svg
-      ref={ref}
-      className={`tingle-lines${tingle && mode === "hero" && robotScreen.visible !== false ? " is-on" : ""}`}
-      viewBox="-50 -50 100 100"
-      aria-hidden="true"
-    >
-      {lines.map((d, i) => (
-        <path key={i} d={d} style={{ "--i": i } as CSSProperties} />
-      ))}
-    </svg>
   );
 }
 
@@ -280,17 +237,16 @@ function Director() {
       const next = past ? "companion" : "hero";
       if (next !== st.mode) {
         st.setMode(next);
-        if (next === "companion") {
-          if (!lastCue) {
-            lastCue = "signals";
-            lastCueAt = performance.now();
-            const l = ROBOT_LINES.signals;
-            window.setTimeout(() => useRobot.getState().say(l.line, { mood: l.mood, corner: l.corner }), 1300);
-          } else {
-            useRobot.getState().hush();
-          }
-        } else {
-          useRobot.getState().hush();
+        // Whatever the robot was saying belongs to where it just was.
+        useRobot.getState().hush();
+        if (next === "companion" && !lastCue) {
+          lastCue = "signals";
+          lastCueAt = performance.now();
+          const l = ROBOT_LINES.signals;
+          // Speak once it has landed in the corner.
+          window.setTimeout(() => {
+            if (useRobot.getState().mode === "companion") useRobot.getState().say(l.line, { mood: l.mood, corner: l.corner });
+          }, 1400);
         }
       }
     };
@@ -386,7 +342,6 @@ export default function RobotLayer() {
           </SceneBoundary>
         ) : null}
       </div>
-      <TingleLines />
       <HitArea />
       <Balloon />
       <RestoreButton />

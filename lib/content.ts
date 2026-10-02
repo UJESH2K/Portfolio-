@@ -765,7 +765,7 @@ export const PRELOADER = {
 
 export const HERO = {
   hello: "Hello there, I'm Ujesh.",
-  lead: "I build production web apps, applied AI and distributed GPU systems, end to end. Seven hackathon wins so far, and a paper headed for IMPACT-2027.",
+  lead: "Software engineer building production web apps, applied AI and distributed GPU systems, end to end. Seven hackathon wins, and a paper at IMPACT-2027.",
   timezoneLabel: "(IST, UTC+5:30)",
   timezone: "Asia/Kolkata",
 };
@@ -778,36 +778,21 @@ export type BalloonChip = { label: string; href: string };
 export type BalloonBeat = { text: string; chips?: BalloonChip[]; mood?: RobotMood };
 
 export const LANDING = {
-  caption: "Meanwhile, in Bengaluru…",
-  tingleCaption: "Danger sense: tingling!",
-  tingle: "Tingle!",
-  calm: "Calm down",
-  scrollHint: "Scroll for the story",
+  eyebrow: "Software engineer · Bengaluru",
+  scrollHint: "Scroll to explore",
   intro: [
-    { text: "Hey there! I'm Ujesh.", mood: "wave" },
-    { text: "Okay, I'm not. I'm his robot. He's busy shipping, so just bear with me.", mood: "peek" },
+    { text: "Hi! I'm Ujesh's robot.", mood: "wave" },
+    { text: "He's off shipping something, so I'm giving the tour today.", mood: "happy" },
     {
-      text: "Want the story? Pick a chapter.",
-      mood: "happy",
+      text: "Scroll with me, or jump straight to a chapter:",
+      mood: "cheer",
       chips: [
-        { label: "What I build", href: "#work" },
+        { label: "Projects", href: "#work" },
         { label: "Internships & freelance", href: "#experience" },
         { label: "Hackathon wins", href: "#wins" },
         { label: "Research", href: "#research" },
-        { label: "Marathons & life", href: "#offclock" },
+        { label: "Life outside work", href: "#offclock" },
         { label: "Say hi", href: "#contact" },
-      ],
-    },
-  ] as BalloonBeat[],
-  tingled: [
-    { text: "Whoa. My antennae are tingling…", mood: "think" },
-    {
-      text: "Danger! You haven't seen the wins yet.",
-      mood: "cheer",
-      chips: [
-        { label: "Show me the wins", href: "#wins" },
-        { label: "The research", href: "#research" },
-        { label: "The projects", href: "#work" },
       ],
     },
   ] as BalloonBeat[],
@@ -1375,25 +1360,24 @@ export type RobotMood = "wave" | "happy" | "think" | "cheer" | "peek";
 export type RobotCorner = "br" | "bl";
 
 export const ROBOT_LINES: Record<string, { line: string; mood: RobotMood; corner: RobotCorner }> = {
-  hero: { line: "Beep! That's him. I'm the stand-in.", mood: "wave", corner: "br" },
-  signals: { line: "I'll tag along. Click me if you get lost!", mood: "wave", corner: "br" },
-  story: { line: "The story so far. Eight chapters, zero filler.", mood: "happy", corner: "bl" },
-  build: { line: "This is the stuff he builds. Watch the cards fly!", mood: "happy", corner: "bl" },
-  work: { line: "Ooh, my favourite part: the projects!", mood: "cheer", corner: "br" },
-  about: { line: "That's the real Ujesh on stage. I'm shorter.", mood: "peek", corner: "bl" },
-  experience: { line: "Real jobs. Real users. Real deadlines.", mood: "think", corner: "br" },
-  wins: { line: "Yay! Seven wins! I counted twice.", mood: "cheer", corner: "bl" },
-  research: { line: "A paper at IMPACT-2027. Beep boop, conference time!", mood: "think", corner: "br" },
-  feed: { line: "He posts a lot. I read all of it.", mood: "happy", corner: "bl" },
-  offclock: { line: "He runs marathons. I prefer standing very still.", mood: "peek", corner: "br" },
-  faq: { line: "Questions? He's got answers.", mood: "think", corner: "bl" },
-  contact: { line: "Say hi! I'll make sure he sees it.", mood: "wave", corner: "br" },
+  signals: { line: "I'll follow you down. Click me any time for shortcuts.", mood: "wave", corner: "br" },
+  story: { line: "The short version: eight chapters, all true.", mood: "happy", corner: "bl" },
+  build: { line: "Here's what he builds. Keep scrolling, the cards fly past.", mood: "happy", corner: "bl" },
+  work: { line: "The projects! One won Inception, one became a paper.", mood: "cheer", corner: "br" },
+  about: { line: "That's him on stage. He talks faster than I compute.", mood: "peek", corner: "bl" },
+  experience: { line: "Where he's worked: real users, real deadlines.", mood: "think", corner: "br" },
+  wins: { line: "Seven wins out of fifty-plus hackathons. I counted twice.", mood: "cheer", corner: "bl" },
+  research: { line: "GradMesh goes to IMPACT-2027 this January.", mood: "think", corner: "br" },
+  feed: { line: "For the day-to-day, these are his profiles.", mood: "happy", corner: "bl" },
+  offclock: { line: "Marathons and football. I mostly hover.", mood: "peek", corner: "br" },
+  faq: { line: "Short on time? The quick answers are here.", mood: "think", corner: "bl" },
+  contact: { line: "That's the tour! His inbox is right here.", mood: "wave", corner: "br" },
 };
 
 export const ROBOT_IDLE_LINES = [
-  "Psst… there's more below.",
-  "Click me for a shortcut!",
-  "Beep. Still here.",
+  "Still here if you need me.",
+  "Click me to jump anywhere.",
+  "There's more below, promise.",
   "I'd scroll for you, but no thumbs.",
 ];
 

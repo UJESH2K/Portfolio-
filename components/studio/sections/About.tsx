@@ -22,7 +22,25 @@ export default function About() {
     if (!el) return;
     const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { threshold: 0.25 });
     io.observe(el);
-    return () => io.disconnect();
+    // Start fetching and decoding the first clip about a screen early, so
+    // the video decoder spins up off screen rather than mid-scroll.
+    const early = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting) return;
+        early.disconnect();
+        const v = vids.current[0];
+        if (v && v.preload !== "auto") {
+          v.preload = "auto";
+          v.load();
+        }
+      },
+      { rootMargin: "100% 0px 100% 0px" }
+    );
+    early.observe(el);
+    return () => {
+      io.disconnect();
+      early.disconnect();
+    };
   }, []);
 
   useEffect(() => {

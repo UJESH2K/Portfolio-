@@ -33,13 +33,51 @@ export default function RevealObserver() {
       });
     };
 
+    // Decode lazy photos about a screen and a half before they arrive, so
+    // the first frame they are on screen is not spent decoding them.
+    const primed = new WeakSet<Element>();
+    const primer = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          const img = e.target as HTMLImageElement;
+          primer.unobserve(img);
+          img.loading = "eager";
+          if (img.complete) img.decode?.().catch(() => {});
+          else img.addEventListener("load", () => img.decode?.().catch(() => {}), { once: true });
+        }
+      },
+      { rootMargin: "150% 0px 150% 0px" }
+    );
+    const prime = () =>
+      document.querySelectorAll("img[loading='lazy']").forEach((img) => {
+        if (primed.has(img)) return;
+        primed.add(img);
+        primer.observe(img);
+      });
+
+    // Rescans are batched to one per frame: scramble and typing effects
+    // mutate the DOM every frame and must not trigger a full query each time.
+    let queued = 0;
+    const rescan = () => {
+      if (queued) return;
+      queued = requestAnimationFrame(() => {
+        queued = 0;
+        scan();
+        prime();
+      });
+    };
+
     scan();
-    const mo = new MutationObserver(scan);
+    prime();
+    const mo = new MutationObserver(rescan);
     mo.observe(document.body, { childList: true, subtree: true });
 
     return () => {
       io.disconnect();
+      primer.disconnect();
       mo.disconnect();
+      cancelAnimationFrame(queued);
     };
   }, []);
 
