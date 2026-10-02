@@ -35,13 +35,6 @@ function Glyph({ icon }: { icon: Icon }) {
           <path d="M15 9l1 9-5 10M16 18l6 4 1 6M15 11l-7-3M15 11l8-5" {...common} />
         </svg>
       );
-    case "comic":
-      return (
-        <svg viewBox="0 0 32 32" className="offclock__icon" aria-hidden="true">
-          <path d="M4 7h24v15H14l-6 5v-5H4z" {...common} />
-          <path d="M17 10l-4 6h4l-2 4 5-7h-4l2-3z" {...common} />
-        </svg>
-      );
     case "game":
       return (
         <svg viewBox="0 0 32 32" className="offclock__icon" aria-hidden="true">

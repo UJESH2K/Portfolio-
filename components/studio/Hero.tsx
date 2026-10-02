@@ -112,7 +112,6 @@ export default function Hero() {
       <div className={`comic__page${shake ? " is-shaking" : ""}`} key={shake} aria-hidden="true">
         <div className="comic__stage">
           <span className="comic__burst" />
-          <p className="comic__aside">{LANDING.aside}</p>
         </div>
         <div className="comic__strip" />
       </div>

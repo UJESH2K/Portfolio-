@@ -2566,20 +2566,6 @@
 .is-tingle .comic__burst {
   background: radial-gradient(closest-side, rgba(255, 60, 20, 0.7), transparent);
 }
-.comic__aside {
-  position: absolute;
-  right: -3px;
-  top: -3px;
-  max-width: min(300px, 46%);
-  padding: 12px 14px 13px;
-  background: var(--comic-yellow);
-  color: var(--comic-ink);
-  border: var(--panel-border) solid var(--comic-ink);
-  font-family: var(--font-b);
-  font-size: 13.5px;
-  line-height: 1.4;
-  pointer-events: auto;
-}
 .comic__strip {
   display: none;
 }
@@ -3168,9 +3154,6 @@
     width: auto;
     transform: rotate(-0.4deg);
     box-shadow: 5px 5px 0 var(--comic-ink);
-  }
-  .comic__aside {
-    display: none;
   }
   .hero.comic .hero__content {
     position: relative;

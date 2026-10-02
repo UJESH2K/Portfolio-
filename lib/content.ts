@@ -780,7 +780,6 @@ export type BalloonBeat = { text: string; chips?: BalloonChip[]; mood?: RobotMoo
 export const LANDING = {
   caption: "Meanwhile, in Bengaluru…",
   tingleCaption: "Danger sense: tingling!",
-  aside: "Why a comic book? I'm a Spider-Man fan. Not Marvel in general, Spider-Man specifically. So this site gets panels, balloons and a tingle button.",
   tingle: "Tingle!",
   calm: "Calm down",
   scrollHint: "Scroll for the story",
@@ -871,7 +870,7 @@ export const STORY = {
     {
       issue: "#08",
       title: "Off the clock",
-      text: "Marathons, the gym every day, football, dancing, games, and an unreasonable amount of Spider-Man.",
+      text: "Marathons, the gym every day, football, dancing and a lot of games.",
       href: "#offclock",
     },
   ] as StoryChapter[],
@@ -1316,9 +1315,8 @@ export const OFF_CLOCK = {
     { label: "Gym, daily", detail: "Non-negotiable, deadline week included.", icon: "gym" },
     { label: "Football", detail: "Whenever there are enough people for a side.", icon: "ball" },
     { label: "Dance", detail: "The one thing on this page with no deploy step.", icon: "dance" },
-    { label: "Spider-Man", detail: "Not Marvel in general, Spider-Man specifically. Hence the comic book.", icon: "comic" },
     { label: "Gaming", detail: "Arcade cabinets, shooters, anything with good movement.", icon: "game" },
-  ] as { label: string; detail: string; icon: "run" | "gym" | "ball" | "dance" | "comic" | "game" }[],
+  ] as { label: string; detail: string; icon: "run" | "gym" | "ball" | "dance" | "game" }[],
 };
 
 export type Faq = { q: string; a: string };
