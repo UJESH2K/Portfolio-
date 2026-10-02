@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { Component, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { ROBOT_IDLE_LINES, ROBOT_LINES, ROBOT_MENU } from "@/lib/content";
+import { ROBOT_IDLE_LINES, ROBOT_LINES, ROBOT_MENU, type RobotCorner } from "@/lib/content";
 import { goTo, robotScreen, useRobot } from "@/lib/robot";
 import { sfx } from "./sfx";
 
@@ -114,6 +114,10 @@ function Balloon() {
         y = robotScreen.headY - bh - robotScreen.height * 0.06;
         next = "right";
       }
+      // In a top corner there is no room above its head: talk from the side.
+      if (st.mode === "companion" && robotScreen.visible && robotScreen.top + robotScreen.height < h * 0.5) {
+        y = robotScreen.headY - bh * 0.35;
+      }
       x = Math.max(12, Math.min(w - bw - 12, x));
       // Keep clear of the two-column nav while it shows in the hero.
       const top = mobile ? 70 : st.mode === "hero" ? 128 : 96;
@@ -224,6 +228,15 @@ function HitArea() {
  * Switches hero ↔ companion on scroll, fires each section's line as it
  * crosses the middle of the screen, and nudges idle visitors.
  */
+const CORNERS: RobotCorner[] = ["tl", "tr", "bl", "br"];
+
+/** A random corner, never the one the robot is already in. */
+function nextCorner(): RobotCorner {
+  const here = useRobot.getState().corner;
+  const options = CORNERS.filter((c) => c !== here);
+  return options[Math.floor(Math.random() * options.length)];
+}
+
 function Director() {
   useEffect(() => {
     const hero = document.getElementById("top");
@@ -245,7 +258,7 @@ function Director() {
           const l = ROBOT_LINES.signals;
           // Speak once it has landed in the corner.
           window.setTimeout(() => {
-            if (useRobot.getState().mode === "companion") useRobot.getState().say(l.line, { mood: l.mood, corner: l.corner });
+            if (useRobot.getState().mode === "companion") useRobot.getState().say(l.line, { mood: l.mood, corner: nextCorner() });
           }, 1400);
         }
       }
@@ -268,7 +281,7 @@ function Director() {
           if (st.speech?.kind === "menu") continue;
           lastCue = key;
           lastCueAt = now;
-          st.say(line.line, { mood: line.mood, corner: line.corner });
+          st.say(line.line, { mood: line.mood, corner: nextCorner() });
         }
       },
       { rootMargin: "-48% 0px -48% 0px" }
@@ -286,7 +299,10 @@ function Director() {
       idleTimer = window.setTimeout(() => {
         const st = useRobot.getState();
         if (st.mode === "companion" && !st.speech && !st.hidden) {
-          st.say(ROBOT_IDLE_LINES[idleIdx++ % ROBOT_IDLE_LINES.length], { mood: idleIdx % 2 ? "peek" : "wave" });
+          st.say(ROBOT_IDLE_LINES[idleIdx++ % ROBOT_IDLE_LINES.length], {
+            mood: idleIdx % 2 ? "peek" : "wave",
+            corner: nextCorner(),
+          });
         }
         arm();
       }, 16000);

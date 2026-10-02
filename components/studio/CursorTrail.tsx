@@ -4,8 +4,8 @@ import { useEffect, useRef } from "react";
 
 /**
  * A short chain of dots that follows the pointer across the landing page,
- * each link springing after the one in front of it, in ember and warm
- * yellow over the red-black smoke. Mouse only; touch devices never see it.
+ * each link springing after the one in front of it, in ink and ember on
+ * the white landing page. Mouse only; touch devices never see it.
  */
 const LINKS = 22;
 
@@ -70,7 +70,7 @@ export default function CursorTrail() {
         const t = 1 - i / pts.length;
         const r = 1.2 + t * 4.2;
         ctx.globalAlpha = t * 0.85 * fade;
-        ctx.fillStyle = i % 3 === 0 ? "#ffd23f" : "#ff5a1f";
+        ctx.fillStyle = i % 4 === 0 ? "#ff5a1f" : "#0d0d0d";
         ctx.beginPath();
         ctx.arc(pts[i].x, pts[i].y, r, 0, Math.PI * 2);
         ctx.fill();

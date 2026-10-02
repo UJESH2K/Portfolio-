@@ -1357,7 +1357,8 @@ export const FOOTER = {
  * it lands on screen; `mood` picks the face and the move it makes.
  */
 export type RobotMood = "wave" | "happy" | "think" | "cheer" | "peek";
-export type RobotCorner = "br" | "bl";
+/** Where the companion sits: any corner, picked at random per section. */
+export type RobotCorner = "br" | "bl" | "tr" | "tl";
 
 export const ROBOT_LINES: Record<string, { line: string; mood: RobotMood; corner: RobotCorner }> = {
   signals: { line: "I'll follow you down. Click me any time for shortcuts.", mood: "wave", corner: "br" },

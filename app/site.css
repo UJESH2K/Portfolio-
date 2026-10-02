@@ -609,17 +609,21 @@
   position: relative;
   height: 100svh;
   min-height: 640px;
-  background: var(--black);
-  color: var(--white);
+  /* Warm white paper, with a faint ember glow where the robot stands. */
+  background:
+    radial-gradient(42% 52% at 74% 62%, rgba(255, 90, 31, 0.1), transparent 70%),
+    var(--paper);
+  color: var(--ink);
   overflow: hidden;
   z-index: 1;
 }
-.hero__smoke {
+.hero::before {
+  content: "";
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
+  pointer-events: none;
+  opacity: 0.22;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.45  0 0 0 0 0.42  0 0 0 0 0.38  0 0 0 0.22 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
 .hero__vignette {
   position: absolute;
@@ -2458,14 +2462,6 @@
    "the story so far". Red-black smoke, one robot, no comic styling.
    ═══════════════════════════════════════════════════════════════════════ */
 
-.hero__smoke {
-  opacity: 0;
-  transition: opacity 1.4s var(--ease);
-}
-.hero__smoke.is-on {
-  opacity: 1;
-}
-
 .hero__eyebrow {
   display: inline-flex;
   align-items: center;
@@ -2475,7 +2471,7 @@
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--fg-2);
 }
 .hero__eyebrow::before {
   content: "";
@@ -2491,7 +2487,7 @@
   min-height: 1.9em;
 }
 .hero__lead {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--fg-2);
   opacity: 0;
   transform: translate3d(0, 16px, 0);
   transition:
@@ -2524,7 +2520,7 @@
   align-items: center;
   gap: 10px;
   padding: 12px 18px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(13, 13, 13, 0.25);
   border-radius: 999px;
   font-family: var(--font-m);
   font-size: 12px;
@@ -2542,9 +2538,9 @@
 }
 @media (hover: hover) {
   .hero__next:hover {
-    background: var(--white);
-    color: var(--ink);
-    border-color: var(--white);
+    background: var(--ink);
+    color: var(--white);
+    border-color: var(--ink);
   }
 }
 @keyframes nudge-down {

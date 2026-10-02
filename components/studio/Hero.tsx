@@ -3,13 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { HERO, LANDING, type BalloonBeat } from "@/lib/content";
 import { goTo, useRobot } from "@/lib/robot";
-import HeroSmoke from "./HeroSmoke";
 import CursorTrail from "./CursorTrail";
 
 /**
- * The landing page: red-black smoke, the headline typing out on the left,
+ * The landing page: warm white paper, the headline typing out on the left,
  * and the robot (drawn by the fixed RobotLayer) standing on the right. The
- * robot opens with three speech-balloon beats; the last holds chapter chips.
+ * robot opens with three speech-bubble beats; the last holds chapter chips.
  */
 export default function Hero() {
   const introDone = useRobot((s) => s.introDone);
@@ -79,7 +78,6 @@ export default function Hero() {
 
   return (
     <section id="top" className="hero" data-cue="hero" aria-label="Introduction">
-      <HeroSmoke active />
       <CursorTrail />
 
       <div className="wrap hero__content">

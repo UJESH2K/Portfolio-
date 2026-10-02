@@ -57,20 +57,37 @@ type Face = { eyes: keyof typeof EYES; mouth: keyof typeof MOUTHS };
 
 type Place = { x: number; y: number; h: number; rz: number; sq: number; hop: number; ry: number };
 
-function targetFor(key: "hero" | "br" | "bl", w: number, h: number) {
+type Spot = "hero" | "tl" | "tr" | "bl" | "br";
+type Edge = "top" | "bottom" | "left" | "right";
+
+function targetFor(key: Spot, w: number, h: number) {
   const mobile = w < 810;
   if (key === "hero") {
-    // On phones the robot stands in the comic panel at the top of the page
-    // (76px from the top, 42% of the screen tall; see .comic__stage), low
-    // enough that the balloon above it never covers its face.
+    // Phones: standing above the headline at the top of the landing page.
     return mobile
       ? { x: w * 0.5, y: 76 + h * 0.42 - 12, h: Math.min(h * 0.2, w * 0.46), ry: -0.12 }
       : { x: w * 0.74, y: h * 0.865, h: Math.min(h * 0.55, w * 0.33), ry: -0.3 };
   }
   const size = mobile ? 88 : 150;
   const inset = mobile ? 46 : 92;
-  const x = key === "br" ? w - inset : inset;
-  return { x, y: h - (mobile ? 46 : 58), h: size, ry: key === "br" ? -0.38 : 0.38 };
+  const right = key === "br" || key === "tr";
+  const top = key === "tl" || key === "tr";
+  // Top spots sit just under the header so the logo and menu stay clear.
+  const y = top ? (mobile ? 104 : 150) + size : h - (mobile ? 46 : 58);
+  return { x: right ? w - inset : inset, y, h: size, ry: right ? -0.38 : 0.38 };
+}
+
+const pick = <T,>(list: T[]): T => list[Math.floor(Math.random() * list.length)];
+
+/** Ways off the screen from a spot, and ways back on to one. */
+function exitsFor(key: Spot): Edge[] {
+  if (key === "hero") return ["top"];
+  const side: Edge = key === "br" || key === "tr" ? "right" : "left";
+  return key === "tl" || key === "tr" ? ["top", side] : ["top", side, "bottom"];
+}
+function entriesFor(key: Spot): Edge[] {
+  const side: Edge = key === "br" || key === "tr" ? "right" : "left";
+  return key === "tl" || key === "tr" ? ["top", side] : ["top", side, "bottom"];
 }
 
 /** How far the landing page has scrolled, capped once it is off screen. */
@@ -136,7 +153,7 @@ function Robot() {
   // the first frame. A skinned mesh's geometry box is the unposed bind pose,
   // which is not the size you see, so this uses the skinned vertices.
   const botH = useRef(0);
-  const posKey = useRef<"hero" | "br" | "bl" | null>(null);
+  const posKey = useRef<Spot | null>(null);
   const pointer = useRef({ x: 0.5, y: 0.5, seen: false });
 
   const playSeg = (seg: Seg, opts: { loop?: boolean; then?: Seg; fade?: number } = {}) => {
@@ -187,38 +204,81 @@ function Robot() {
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    const moveTo = (key: "hero" | "br" | "bl", animate: boolean) => {
+    const moveTo = (key: Spot, animate: boolean) => {
       const w = window.innerWidth;
       const h = window.innerHeight;
       const t = targetFor(key, w, h);
       const p = place.current;
       gsap.killTweensOf(p);
       // On the landing the robot rides up with the page (see heroShift);
-      // when it leaves, start the leap from where it actually is on screen.
-      if (animate && posKey.current === "hero") p.y -= heroShift(h);
+      // when it leaves, start from where it actually is on screen.
+      const from = posKey.current;
+      if (animate && from === "hero") p.y -= heroShift(h);
       posKey.current = key;
       if (!animate || reduced || p.h === 0) {
         Object.assign(p, { x: t.x, y: t.y, h: t.h, ry: t.ry, rz: 0, sq: 1, hop: 0 });
         return;
       }
-      const startH = p.h;
-      const exitX = p.x + (key === "bl" || (key === "hero" && p.x > w / 2) ? -1 : 1) * startH * 0.25;
+
       const tl = gsap.timeline();
-      // Crouch, leap off the top of the screen…
-      tl.to(p, { sq: 0.82, duration: 0.14, ease: "power2.out" })
-        .add(() => sfx.jump())
-        .to(p, { sq: 1.12, duration: 0.12, ease: "power2.out" })
-        .to(p, { y: -startH * 0.35, x: exitX, rz: (Math.random() - 0.5) * 0.9, duration: 0.5, ease: "power2.in" }, "<")
-        // …reappear above the new spot, then drop in and land.
-        .set(p, { x: t.x, y: -t.h * 0.2, h: t.h, ry: t.ry, rz: key === "bl" ? 0.35 : -0.35, sq: 1.1 })
-        .to(p, { y: t.y, rz: 0, duration: 0.62, ease: "power3.in" }, "+=0.12")
-        .add(() => sfx.land())
-        .to(p, { sq: 0.72, duration: 0.09, ease: "power2.out" })
-        .to(p, { sq: 1, duration: 0.5, ease: "elastic.out(1, 0.45)" })
-        .add(() => {
-          setFace({ eyes: "happy", mouth: "open" }, 900);
-          playSeg("happy", { then: "idle" });
-        }, "<");
+      const size = p.h;
+
+      // ── Off the screen, a different way each time ──────────────────
+      const out = pick(exitsFor(from ?? "br"));
+      tl.to(p, { sq: 0.82, duration: 0.13, ease: "power2.out" }).add(() => sfx.jump());
+      if (out === "top") {
+        tl.to(p, { sq: 1.12, duration: 0.12, ease: "power2.out" }).to(
+          p,
+          { y: -size * 0.4, x: p.x + (p.x > w / 2 ? -1 : 1) * size * 0.3, rz: (Math.random() - 0.5) * 1.2, duration: 0.5, ease: "power2.in" },
+          "<"
+        );
+      } else if (out === "bottom") {
+        tl.to(p, { sq: 1.08, duration: 0.1 }).to(p, { y: h + size * 1.2, rz: (Math.random() - 0.5) * 0.6, duration: 0.45, ease: "back.in(1.6)" });
+      } else {
+        const dir = out === "right" ? 1 : -1;
+        tl.to(p, { sq: 1.1, ry: dir * 1.1, duration: 0.12 })
+          .to(p, { x: dir > 0 ? w + size : -size, rz: -dir * 0.5, duration: 0.5, ease: "power2.in" })
+          .to(p, { hop: 0.35, duration: 0.25, ease: "power2.out", yoyo: true, repeat: 1 }, "<");
+      }
+
+      if (key === "hero") {
+        // Back to the landing: drop in from above.
+        tl.set(p, { x: t.x, y: -t.h * 0.2, h: t.h, ry: t.ry, rz: -0.3, sq: 1.1, hop: 0 })
+          .to(p, { y: t.y, rz: 0, duration: 0.65, ease: "power3.in" }, "+=0.1")
+          .add(() => sfx.land())
+          .to(p, { sq: 0.75, duration: 0.09 })
+          .to(p, { sq: 1, duration: 0.5, ease: "elastic.out(1, 0.45)" });
+        return;
+      }
+
+      // ── …and back on to the new spot from one of its edges ─────────
+      const inn = pick(entriesFor(key));
+      const land = () => {
+        sfx.land();
+        setFace({ eyes: "happy", mouth: "open" }, 900);
+        playSeg("happy", { then: "idle" });
+      };
+      if (inn === "top") {
+        tl.set(p, { x: t.x, y: -t.h * 0.2, h: t.h, ry: t.ry, rz: t.x > w / 2 ? -0.35 : 0.35, sq: 1.1, hop: 0 })
+          .to(p, { y: t.y, rz: 0, duration: 0.6, ease: "power3.in" }, "+=0.12")
+          .add(land)
+          .to(p, { sq: 0.72, duration: 0.09, ease: "power2.out" })
+          .to(p, { sq: 1, duration: 0.5, ease: "elastic.out(1, 0.45)" });
+      } else if (inn === "bottom") {
+        tl.set(p, { x: t.x, y: h + t.h * 1.2, h: t.h, ry: t.ry, rz: 0, sq: 1.15, hop: 0 }, "+=0.1")
+          .to(p, { y: t.y, duration: 0.6, ease: "back.out(1.7)" })
+          .add(land, "-=0.15")
+          .to(p, { sq: 1, duration: 0.45, ease: "elastic.out(1, 0.5)" }, "<");
+      } else {
+        const dir = inn === "right" ? 1 : -1;
+        tl.set(p, { x: dir > 0 ? w + t.h : -t.h, y: t.y, h: t.h, ry: -dir * 1.1, rz: dir * 0.25, sq: 1, hop: 0 }, "+=0.1")
+          .to(p, { x: t.x, rz: 0, duration: 0.75, ease: "power3.out" })
+          .to(p, { hop: 0.22, duration: 0.18, ease: "power2.out", yoyo: true, repeat: 3 }, "<")
+          .to(p, { ry: t.ry, duration: 0.35, ease: "power2.out" }, "-=0.25")
+          .add(land)
+          .to(p, { sq: 0.85, duration: 0.08 })
+          .to(p, { sq: 1, duration: 0.4, ease: "elastic.out(1, 0.5)" });
+      }
     };
 
     let lastMode = useRobot.getState().mode;
