@@ -88,7 +88,7 @@ export default function SelectedWork() {
                   data-card={external ? w.linkLabel ?? "View project" : "Ask me about it"}
                   aria-label={`${w.title}: ${w.headline}`}
                 >
-                  <figure className="wcard__fig">
+                  <figure className="wcard__fig" data-liquid={w.image && !w.visual ? "" : undefined}>
                     <Visual card={w} />
                     <figcaption className="wcard__tags">
                       {w.tags.map((t) => (

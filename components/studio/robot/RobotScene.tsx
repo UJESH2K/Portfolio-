@@ -5,7 +5,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { gsap } from "gsap";
-import { robotScreen, useRobot } from "@/lib/robot";
+import { robotHover, robotScreen, useRobot } from "@/lib/robot";
 import type { RobotMood } from "@/lib/content";
 import { sfx } from "./sfx";
 
@@ -118,9 +118,48 @@ function Robot() {
     const toys = holo ? holo.children.filter((c) => c !== ground) : [];
     // The hologram disc is twice the robot's width; shrink it to a platform.
     ground?.scale.multiplyScalar(0.58);
+
+    // Hover colour reveal: inside a circle around the pointer the robot's
+    // colours rotate through the spectrum, with a soft bright ring at the
+    // edge, like paint wiping across it. Patched into its own material once.
+    const reveal = { uReveal: { value: new THREE.Vector3(0, 0, 0) }, uHue: { value: 0 } };
+    scene.traverse((o) => {
+      const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+      if (!m || m.name !== "material" || m.userData.reveal) return;
+      m.userData.reveal = true;
+      m.customProgramCacheKey = () => "robot-reveal";
+      m.onBeforeCompile = (shader) => {
+        shader.uniforms.uReveal = reveal.uReveal;
+        shader.uniforms.uHue = reveal.uHue;
+        shader.fragmentShader = shader.fragmentShader
+          .replace(
+            "void main() {",
+            `uniform vec3 uReveal;
+uniform float uHue;
+vec3 hueShift(vec3 c, float a) {
+  const vec3 k = vec3(0.57735);
+  float ca = cos(a);
+  return c * ca + cross(k, c) * sin(a) + k * dot(k, c) * (1.0 - ca);
+}
+void main() {`
+          )
+          .replace(
+            "#include <dithering_fragment>",
+            `#include <dithering_fragment>
+if (uReveal.z > 0.5) {
+  float d = distance(gl_FragCoord.xy, uReveal.xy);
+  float inside = 1.0 - smoothstep(uReveal.z * 0.8, uReveal.z, d);
+  float ring = smoothstep(uReveal.z * 0.74, uReveal.z * 0.9, d) * (1.0 - smoothstep(uReveal.z * 0.9, uReveal.z, d));
+  vec3 painted = hueShift(gl_FragColor.rgb, uHue) * 1.12 + 0.03;
+  gl_FragColor.rgb = mix(gl_FragColor.rgb, painted, inside) + ring * vec3(1.0, 0.86, 0.62) * 0.4;
+}`
+          );
+      };
+      m.needsUpdate = true;
+    });
     const faceBones: Record<string, THREE.Object3D | null> = {};
     [...Object.values(EYES).flat(), ...Object.values(MOUTHS).flat()].forEach((n) => (faceBones[n] = byName(n)));
-    return { scene, bot, head: byName("Head_M_033"), ground, toys, faceBones };
+    return { scene, bot, head: byName("Head_M_033"), ground, toys, faceBones, reveal };
   }, [gltf.scene]);
 
   const mixer = useMemo(() => new THREE.AnimationMixer(parts.scene), [parts.scene]);
@@ -147,6 +186,7 @@ function Robot() {
     // standing frozen while the page moves under it.
     lean: 0,
     lastScrollY: 0,
+    bodyYaw: 0,
   });
   const place = useRef<Place>({ x: 0, y: 0, h: 0, rz: 0, sq: 1, hop: 0, ry: 0 });
   // Height of the posed robot (antennae to feet) in model units, measured on
@@ -163,6 +203,7 @@ function Robot() {
     const to = actions[1 - a.cur];
     to.reset();
     to.time = SEG[seg][0];
+    to.timeScale = 1;
     to.setEffectiveWeight(1);
     to.play();
     from.crossFadeTo(to, opts.fade ?? 0.35, false);
@@ -318,6 +359,23 @@ function Robot() {
         case "peek":
           playSeg("peek", { then: "idle" });
           break;
+        case "dizzy": {
+          // A full spin with ">.<" eyes, then a wobbly little hop.
+          setFace({ eyes: "kawaii", mouth: "kawaii" }, 2400);
+          const p = place.current;
+          const base = p.ry;
+          gsap
+            .timeline()
+            .to(p, { ry: base + Math.PI * 2, duration: 0.9, ease: "power2.inOut" })
+            .set(p, { ry: base })
+            .to(p, { hop: 0.18, duration: 0.2, ease: "power2.out", yoyo: true, repeat: 1 });
+          break;
+        }
+        case "sleep":
+          // Eyes closed until something else (a wake-up "happy") takes over.
+          setFace({ eyes: "closed", mouth: "closed" }, 120000);
+          playSeg("idle", { loop: true });
+          break;
         case "cheer": {
           setFace({ eyes: "happy", mouth: "open" }, 1600);
           playSeg("wave", { then: "idle", fade: 0.2 });
@@ -375,22 +433,25 @@ function Robot() {
       botH.current = isFinite(h) && h > 0.3 ? h : 1.5;
     }
 
-    // Advance to the next window when the current one runs out.
+    // On the landing, idle is a held, relaxed pose: the only motion is the
+    // body and head turning toward the cursor (and blinks). Elsewhere the
+    // idle loop plays normally.
     const act = actions[a.cur];
+    const calm = posKey.current === "hero" && a.seg === "idle";
+    act.timeScale = calm ? 0 : 1;
+
+    // Advance to the next window when the current one runs out.
     if (act.time >= SEG[a.seg][1]) {
       if (a.loop) {
         a.loops++;
-        // In the hero, break up the idle loop with the hologram routine.
-        if (s.mode === "hero" && a.seg === "idle" && a.loops >= 2) playSeg("play", { then: "idle" });
-        else playSeg(a.seg, { loop: true, fade: 0.25 });
+        playSeg(a.seg, { loop: true, fade: 0.25 });
       } else {
         playSeg(a.then, { loop: true });
       }
     }
 
-    // Toys only in the hero; the companion keeps its disc and nothing else.
-    const showToys = s.mode === "hero" && posKey.current === "hero";
-    for (const t of parts.toys) t.visible = showToys;
+    // No hologram toys anywhere; the disc stays.
+    for (const t of parts.toys) t.visible = false;
 
     // ── Face ────────────────────────────────────────────────────────────
     let face: Face | null = a.face && now < a.faceUntil ? a.face : null;
@@ -421,14 +482,35 @@ function Robot() {
     a.lastScrollY = sy;
     const leanT = companion ? THREE.MathUtils.clamp(-vel * 0.006, -0.24, 0.24) : 0;
     a.lean += (leanT - a.lean) * (1 - Math.exp(-dt * 5));
-    const bob = companion ? Math.sin(now / 620) * p.h * 0.018 : 0;
+    // Companion: a slow hover. Landing: just breathing.
+    const bob = companion ? Math.sin(now / 620) * p.h * 0.018 : Math.sin(now / 1100) * p.h * 0.005;
+    // On the landing the whole body turns a little toward the cursor.
+    const bodyT =
+      !companion && pointer.current.seen
+        ? THREE.MathUtils.clamp(((pointer.current.x * size.width - p.x) / size.width) * 1.3, -0.55, 0.45)
+        : 0;
+    a.bodyYaw += (bodyT - a.bodyYaw) * (1 - Math.exp(-dt * 4));
     let jitter = 0;
     if (now < a.shakeUntil) jitter = (Math.random() - 0.5) * p.h * 0.02;
     g.position.set((p.x + jitter - size.width / 2) * wpp, (size.height / 2 - yScreen) * wpp + p.hop * p.h * wpp, 0);
     g.scale.set(scale * (2 - p.sq) ** 0.5, scale * p.sq, scale * (2 - p.sq) ** 0.5);
     g.position.y += bob * wpp;
-    g.rotation.set(0, p.ry, p.rz + a.lean * (p.x > size.width / 2 ? 1 : -1));
+    g.rotation.set(0, p.ry + a.bodyYaw, p.rz + a.lean * (p.x > size.width / 2 ? 1 : -1));
     g.visible = !s.hidden && p.h > 0;
+
+    // ── Hover colour reveal ─────────────────────────────────────────────
+    {
+      const dpr = state.gl.getPixelRatio();
+      const u = parts.reveal.uReveal.value;
+      const target = robotHover.on ? robotScreen.height * 0.42 * dpr : 0;
+      u.z += (target - u.z) * (1 - Math.exp(-dt * (robotHover.on ? 7 : 4)));
+      if (u.z < 0.6 && !robotHover.on) u.z = 0;
+      if (robotHover.on || u.z > 0) {
+        u.x += (robotHover.x * dpr - u.x) * 0.35;
+        u.y += ((size.height - robotHover.y) * dpr - u.y) * 0.35;
+      }
+      if (robotHover.on) parts.reveal.uHue.value = (parts.reveal.uHue.value + dt * 1.6) % (Math.PI * 2);
+    }
 
     // ── Look at the cursor ──────────────────────────────────────────────
     if (parts.head) {

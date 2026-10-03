@@ -782,10 +782,9 @@ export const LANDING = {
   scrollHint: "Scroll to explore",
   intro: [
     { text: "Hi! I'm Ujesh's robot.", mood: "wave" },
-    { text: "He's off shipping something, so I'm giving the tour today.", mood: "happy" },
+    { text: "He's off shipping something, so I'm giving the tour today." },
     {
       text: "Scroll with me, or jump straight to a chapter:",
-      mood: "cheer",
       chips: [
         { label: "Projects", href: "#work" },
         { label: "Internships & freelance", href: "#experience" },
@@ -1213,6 +1212,30 @@ export const WINS: Win[] = [
   },
 ];
 
+/**
+ * The hackathon wall: every photo from images/winning. Results come from the
+ * resume; where a result isn't on it (Cardano), only the event is shown.
+ */
+export type WallPhoto = { src: string; alt: string; event: string; result?: string; tall?: boolean; wide?: boolean };
+
+export const HACK_WALL = {
+  eyebrow: "Hackathon wall",
+  title: "Cheques, certificates and very little sleep.",
+  text: "Proof from the floor: the photos from the weekends that ended on stage.",
+  photos: [
+    { src: "/media/win-inception", alt: "The team holding the Inception winner's cheque", event: "Inception", result: "Winner", wide: true, tall: true },
+    { src: "/media/win-denova", alt: "Presenting the build at Denova", event: "Denova", result: "Winner · Solana track", wide: true },
+    { src: "/media/win-inception-solo", alt: "Ujesh with the Inception cheque", event: "Inception", result: "Winner", tall: true },
+    { src: "/media/win-cypher", alt: "Winners on stage with certificates at Cypher", event: "Cypher", result: "Winner" },
+    { src: "/media/win-cardano-cheque", alt: "Two teammates holding a cheque at the Cardano hackathon", event: "Cardano hackathon", tall: true },
+    { src: "/media/win-gsc", alt: "The team at the Google Solution Challenge bootcamp", event: "Google Solution Challenge", result: "Regional qualifier" },
+    { src: "/media/win-cypher-2", alt: "Certificates in hand at Cypher", event: "Cypher, again", result: "Winner" },
+    { src: "/media/win-inception-3", alt: "The Inception team on stage", event: "Inception", result: "Winner" },
+    // NEEDS_INPUT: add the Cardano placement as `result` once confirmed.
+    { src: "/media/win-cardano-floor", alt: "The Cardano hackathon floor", event: "Cardano hackathon", wide: true },
+  ] as WallPhoto[],
+};
+
 export type Paper = {
   status: string;
   date: string;
@@ -1356,7 +1379,7 @@ export const FOOTER = {
  * What the robot says as each section scrolls into view. `corner` is where
  * it lands on screen; `mood` picks the face and the move it makes.
  */
-export type RobotMood = "wave" | "happy" | "think" | "cheer" | "peek";
+export type RobotMood = "wave" | "happy" | "think" | "cheer" | "peek" | "dizzy" | "sleep";
 /** Where the companion sits: any corner, picked at random per section. */
 export type RobotCorner = "br" | "bl" | "tr" | "tl";
 
@@ -1368,6 +1391,7 @@ export const ROBOT_LINES: Record<string, { line: string; mood: RobotMood; corner
   about: { line: "That's him on stage. He talks faster than I compute.", mood: "peek", corner: "bl" },
   experience: { line: "Where he's worked: real users, real deadlines.", mood: "think", corner: "br" },
   wins: { line: "Seven wins out of fifty-plus hackathons. I counted twice.", mood: "cheer", corner: "bl" },
+  wall: { line: "The photo wall! Hover a picture, it ripples.", mood: "happy", corner: "tr" },
   research: { line: "GradMesh goes to IMPACT-2027 this January.", mood: "think", corner: "br" },
   feed: { line: "For the day-to-day, these are his profiles.", mood: "happy", corner: "bl" },
   offclock: { line: "Marathons and football. I mostly hover.", mood: "peek", corner: "br" },
@@ -1381,6 +1405,21 @@ export const ROBOT_IDLE_LINES = [
   "There's more below, promise.",
   "I'd scroll for you, but no thumbs.",
 ];
+
+/** Hidden extras. None are needed to use the site; all are just for fun. */
+export const EASTER_EGGS = {
+  cheatCode: "Cheat code accepted. Infinite curiosity unlocked.",
+  name: "Hey, that's my human!",
+  dizzy: "Whoa. Okay, okay, I'm dizzy.",
+  sleep: "Zzz…",
+  wake: "Oh! You're back.",
+  console: [
+    "Hey, you opened the console. You're my kind of visitor.",
+    "This site: Next.js, React Three Fiber, GSAP, Lenis, one very patient robot.",
+    "Built by Ujesh Kumar Yadav. Say hi: ujeshyadav20k5@gmail.com",
+    "Psst: try the classic cheat code. ↑ ↑ ↓ ↓ ← → ← → B A",
+  ],
+};
 
 export const ROBOT_MENU = {
   prompt: "Where to?",

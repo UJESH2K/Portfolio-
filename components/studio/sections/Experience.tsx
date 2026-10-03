@@ -66,7 +66,7 @@ export default function Experience() {
                     <li key={p}>{p}</li>
                   ))}
                 </ul>
-                <figure className="xp__fig">
+                <figure className="xp__fig" data-liquid="">
                   <Img src={r.image} alt={r.imageAlt} sizes="(max-width: 809px) 92vw, 40vw" />
                 </figure>
               </div>

@@ -2,9 +2,10 @@
 
 import dynamic from "next/dynamic";
 import { Component, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { ROBOT_IDLE_LINES, ROBOT_LINES, ROBOT_MENU, type RobotCorner } from "@/lib/content";
-import { goTo, robotScreen, useRobot } from "@/lib/robot";
+import { EASTER_EGGS, ROBOT_IDLE_LINES, ROBOT_LINES, ROBOT_MENU, type RobotCorner } from "@/lib/content";
+import { goTo, robotHover, robotScreen, useRobot } from "@/lib/robot";
 import { sfx } from "./sfx";
+import { burst } from "../confetti";
 
 const RobotScene = dynamic(() => import("./RobotScene"), { ssr: false });
 
@@ -189,9 +190,11 @@ function Balloon() {
 
 /** Invisible button over the companion robot. */
 function HitArea() {
-  const mode = useRobot((s) => s.mode);
   const hidden = useRobot((s) => s.hidden);
   const ref = useRef<HTMLButtonElement>(null);
+  const lastHappy = useRef(0);
+  // Easter egg: five quick clicks and it spins itself dizzy.
+  const clicks = useRef<number[]>([]);
   useEffect(() => {
     let raf = 0;
     const loop = () => {
@@ -210,10 +213,37 @@ function HitArea() {
       ref={ref}
       type="button"
       className="robot-hit"
-      hidden={mode !== "companion" || hidden}
+      hidden={hidden}
       aria-label="Ask the robot where to go"
-      onClick={() => {
+      // Hovering paints a colour reveal across the robot (RobotScene) and
+      // gets a happy face, at most once every couple of seconds.
+      onPointerEnter={(e) => {
+        robotHover.on = true;
+        robotHover.x = e.clientX;
+        robotHover.y = e.clientY;
+        const now = performance.now();
+        if (now - lastHappy.current > 2200) {
+          lastHappy.current = now;
+          useRobot.getState().react("happy");
+        }
+      }}
+      onPointerMove={(e) => {
+        robotHover.x = e.clientX;
+        robotHover.y = e.clientY;
+      }}
+      onPointerLeave={() => {
+        robotHover.on = false;
+      }}
+      onClick={(e) => {
         sfx.pop();
+        const now = performance.now();
+        clicks.current = [...clicks.current.filter((t) => now - t < 2000), now];
+        if (clicks.current.length >= 5) {
+          clicks.current = [];
+          burst(e.clientX, e.clientY, 50);
+          useRobot.getState().say(EASTER_EGGS.dizzy, { mood: "dizzy" });
+          return;
+        }
         useRobot.getState().say(ROBOT_MENU.prompt, {
           mood: "happy",
           chips: [...ROBOT_MENU.stops, { label: "Hide the robot", href: "#hide" }],

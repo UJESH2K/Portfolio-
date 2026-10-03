@@ -45,6 +45,8 @@ type RobotState = {
   setMode: (mode: RobotMode) => void;
   say: (text: string, opts?: { mood?: RobotMood; chips?: BalloonChip[]; kind?: Speech["kind"]; corner?: RobotCorner }) => void;
   hush: () => void;
+  /** Play a mood without saying anything (hover reactions, easter eggs). */
+  react: (mood: RobotMood) => void;
   toggleMuted: () => void;
   setHidden: (hidden: boolean) => void;
 };
@@ -70,10 +72,12 @@ export const useRobot = create<RobotState>((set) => ({
     set((s) => ({
       speech: { key: ++speechKey, text, chips: opts.chips, kind: opts.kind ?? (opts.chips ? "menu" : "line") },
       mood: opts.mood ?? s.mood,
-      moodTick: s.moodTick + 1,
+      // Only a line that asks for a move gets one; plain lines just talk.
+      moodTick: opts.mood ? s.moodTick + 1 : s.moodTick,
       corner: opts.corner ?? s.corner,
     })),
   hush: () => set({ speech: null }),
+  react: (mood) => set((s) => ({ mood, moodTick: s.moodTick + 1 })),
   toggleMuted: () => set((s) => ({ muted: !s.muted })),
   setHidden: (hidden) => set((s) => ({ hidden, speech: hidden ? null : s.speech })),
 }));
@@ -92,6 +96,12 @@ export const robotScreen = {
   /** Which side of the screen it stands on, for balloon placement. */
   side: "right" as "left" | "right",
 };
+
+/**
+ * Pointer over the robot, written by its hover target and read by the scene
+ * for the colour-reveal effect. CSS pixels from the top-left of the window.
+ */
+export const robotHover = { on: false, x: 0, y: 0 };
 
 /** Smooth-scroll to an in-page anchor through Lenis when it is running. */
 export function goTo(href: string) {

@@ -1,4 +1,5 @@
 import { FOOTER, PROFILE, SITE_NAV, SOCIALS, WORK, isMissing } from "@/lib/content";
+import type { CSSProperties } from "react";
 import { ArrowIcon } from "../primitives";
 
 export default function Footer() {
@@ -8,8 +9,12 @@ export default function Footer() {
       <div className="wrap">
         <div className="footer__top">
           <div>
-            <h2 className="footer__title" data-rv>
-              {FOOTER.title}
+            <h2 className="footer__title" data-rv aria-label={FOOTER.title}>
+              {Array.from(FOOTER.title).map((ch, i) => (
+                <span key={i} className="footer__ch" aria-hidden="true" style={{ "--i": i } as CSSProperties}>
+                  {ch === " " ? " " : ch}
+                </span>
+              ))}
             </h2>
             <a className="footer__mail" href={`mailto:${PROFILE.email}`}>
               {PROFILE.email}

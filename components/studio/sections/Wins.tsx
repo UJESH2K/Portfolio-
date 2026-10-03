@@ -8,6 +8,45 @@ import { scrambleInto } from "../Scramble";
 const DURATION = 5200;
 
 /**
+ * A stat that counts up from zero the first time it scrolls into view. The
+ * real value is server-rendered, so it reads correctly without JavaScript.
+ */
+function CountUp({ value }: { value: string }) {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    const m = value.match(/^(\d+)(.*)$/);
+    if (!el || !m || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const target = Number(m[1]);
+    const suffix = m[2];
+    el.textContent = `0${suffix}`;
+    let raf = 0;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting) return;
+        io.disconnect();
+        const t0 = performance.now();
+        const tick = (now: number) => {
+          const p = Math.min(1, (now - t0) / 1400);
+          const eased = 1 - Math.pow(1 - p, 3);
+          el.textContent = `${Math.round(target * eased)}${suffix}`;
+          if (p < 1) raf = requestAnimationFrame(tick);
+        };
+        raf = requestAnimationFrame(tick);
+      },
+      { threshold: 0.6 }
+    );
+    io.observe(el);
+    return () => {
+      io.disconnect();
+      cancelAnimationFrame(raf);
+      el.textContent = value;
+    };
+  }, [value]);
+  return <b ref={ref}>{value}</b>;
+}
+
+/**
  * Wins: a full-bleed stage cycling through results, each name decoding in
  * huge type over its photo (or over an outlined numeral when there is no
  * photo to show). Auto-advances only while on screen; hover pauses; the
@@ -129,7 +168,7 @@ export default function Wins() {
             <div key={s.label} className="wins__stat rv" data-rv>
               <dt className="sr-only">{s.label}</dt>
               <dd style={{ margin: 0 }}>
-                <b>{s.value}</b>
+                <CountUp value={s.value} />
                 <span>{s.label}</span>
               </dd>
             </div>

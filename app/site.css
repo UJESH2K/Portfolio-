@@ -849,6 +849,8 @@
 .marquee {
   margin-top: clamp(90px, 22vh, 260px);
   overflow: hidden;
+  /* Tilts with scroll speed (set by Delight.tsx). */
+  transform: skewX(var(--skew, 0deg));
   mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
 }
@@ -2126,6 +2128,28 @@
   line-height: 0.85;
   text-transform: uppercase;
 }
+/* Hovering the title sends a wave through its letters. */
+.footer__ch {
+  display: inline-block;
+  transition:
+    transform 0.6s var(--spring),
+    color 0.4s;
+  transition-delay: calc(var(--i) * 0.03s);
+}
+@media (hover: hover) {
+  .footer__title:hover .footer__ch {
+    transform: translate3d(0, -0.08em, 0) rotate(-3deg);
+    color: var(--ember);
+  }
+}
+/* Magnetic buttons (Delight.tsx) ease back when the pointer leaves. */
+.cta,
+.hero__next,
+.arrow {
+  transition-property: transform, color, background, border-color, opacity;
+  transition-duration: 0.45s;
+  transition-timing-function: var(--ease);
+}
 .footer__mail {
   display: inline-block;
   margin-top: 28px;
@@ -2982,5 +3006,148 @@
   .hero__actions {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* ─── Liquid images ─────────────────────────────────────────────────── */
+
+/* The canvas sits over its photo and takes the same hover zoom; the photo
+   is hidden only once the canvas has drawn. */
+.liquid-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+.wcard__fig .liquid-canvas {
+  transform: scale(1.06);
+  transition: transform 1.4s var(--ease);
+}
+@media (hover: hover) {
+  .wcard__link:hover .wcard__fig .liquid-canvas {
+    transform: scale(1);
+  }
+}
+.xp__fig {
+  position: relative;
+}
+img.is-liquid {
+  visibility: hidden;
+}
+
+/* ─── Hackathon wall ────────────────────────────────────────────────── */
+
+.wall {
+  padding: clamp(100px, 15vh, 190px) 0 clamp(90px, 13vh, 170px);
+}
+.wall__head {
+  display: grid;
+  grid-template-columns: 1fr minmax(260px, 420px);
+  gap: 20px 40px;
+  align-items: end;
+  margin-bottom: clamp(40px, 7vh, 72px);
+}
+.wall__head .eyebrow {
+  grid-column: 1 / -1;
+}
+.wall__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: clamp(150px, 15vw, 250px);
+  grid-auto-flow: dense;
+  gap: clamp(10px, 1.1vw, 16px);
+}
+.wall__tile.is-wide {
+  grid-column: span 2;
+}
+.wall__tile.is-tall {
+  grid-row: span 2;
+}
+.wall__fig {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--paper-2);
+  transition:
+    transform 0.7s var(--spring),
+    box-shadow 0.7s var(--ease);
+}
+.wall__fig img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.wall__shine {
+  position: absolute;
+  inset: -20%;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.42) 50%, transparent 65%);
+  transform: translate3d(-70%, 0, 0);
+  transition: transform 0s;
+}
+.wall__cap {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 3;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 11px 9px;
+  border-radius: 3px;
+  background: rgba(8, 8, 8, 0.72);
+  color: var(--white);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transform: translate3d(0, calc(100% + 14px), 0);
+  transition: transform 0.55s var(--ease);
+}
+.wall__cap b {
+  font-family: var(--font-h);
+  font-weight: 500;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+.wall__cap span {
+  font-family: var(--font-m);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ember-2);
+}
+@media (hover: hover) {
+  .wall__fig:hover {
+    transform: translate3d(0, -6px, 0) rotate(-0.4deg);
+    box-shadow: 0 28px 60px -28px rgba(0, 0, 0, 0.45);
+  }
+  .wall__fig:hover .wall__shine {
+    transform: translate3d(70%, 0, 0);
+    transition: transform 0.9s var(--ease);
+  }
+  .wall__fig:hover .wall__cap {
+    transform: none;
+  }
+}
+/* Touch screens have no hover: keep captions visible. */
+@media (hover: none) {
+  .wall__cap {
+    transform: none;
+  }
+}
+
+@media (max-width: 809px) {
+  .wall__head {
+    grid-template-columns: 1fr;
+  }
+  .wall__grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: 42vw;
   }
 }
