@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { Component, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { EASTER_EGGS, ROBOT_IDLE_LINES, ROBOT_LINES, ROBOT_MENU, type RobotCorner } from "@/lib/content";
+import { EASTER_EGGS, ROBOT_IDLE_LINES, ROBOT_LINES, ROBOT_MENU } from "@/lib/content";
 import { goTo, robotHover, robotScreen, useRobot } from "@/lib/robot";
 import { sfx } from "./sfx";
 import { burst } from "../confetti";
@@ -258,70 +258,120 @@ function HitArea() {
  * Switches hero ↔ companion on scroll, fires each section's line as it
  * crosses the middle of the screen, and nudges idle visitors.
  */
-const CORNERS: RobotCorner[] = ["tl", "tr", "bl", "br"];
+/**
+ * Decides where the companion is and what it says:
+ *   - hero ↔ companion switches at half-way down the landing page;
+ *   - it follows the section that sits at the middle of the screen, but only
+ *     once the visitor has settled on it, so flicking past sections doesn't
+ *     send it bouncing around or leave it reading out the wrong one;
+ *   - each section has a set corner (ROBOT_LINES); it travels there first and
+ *     speaks after it has landed;
+ *   - a long quiet stretch gets a short nudge, without moving.
+ */
+const SETTLE_MS = 350;
+const LAND_MS = 1500;
 
-/** A random corner, never the one the robot is already in. */
-function nextCorner(): RobotCorner {
-  const here = useRobot.getState().corner;
-  const options = CORNERS.filter((c) => c !== here);
-  return options[Math.floor(Math.random() * options.length)];
+function sectionAtCentre(): string {
+  const y = window.innerHeight * 0.45;
+  let found = "";
+  document.querySelectorAll<HTMLElement>("[data-cue]").forEach((el) => {
+    if (el.id === "top") return;
+    const r = el.getBoundingClientRect();
+    if (r.top <= y && r.bottom > y) found = el.dataset.cue ?? "";
+  });
+  return found;
 }
 
 function Director() {
   useEffect(() => {
     const hero = document.getElementById("top");
-    let lastCue = "";
-    let lastCueAt = 0;
+    let current = "";
+    let pending = "";
+    let settleTimer = 0;
+    let speakTimer = 0;
 
-    const onScroll = () => {
+    const present = (key: string, moving: boolean) => {
+      const line = ROBOT_LINES[key];
+      if (!line) return;
+      current = key;
+      clearTimeout(speakTimer);
+      speakTimer = window.setTimeout(
+        () => {
+          const st = useRobot.getState();
+          if (st.mode !== "companion" || st.hidden || current !== key) return;
+          // A menu the visitor opened stays until they choose.
+          if (st.speech?.kind === "menu") return;
+          st.say(line.line, { mood: line.mood });
+        },
+        moving ? LAND_MS : 250
+      );
+    };
+
+    const visit = (key: string) => {
+      const line = ROBOT_LINES[key];
+      if (!line) return;
+      const st = useRobot.getState();
+      const moving = line.corner !== st.corner;
+      st.hush();
+      if (moving) st.setCorner(line.corner);
+      present(key, moving);
+    };
+
+    const update = () => {
       const st = useRobot.getState();
       if (!st.introDone) return;
       const past = hero ? window.scrollY > hero.offsetHeight * 0.5 : window.scrollY > 400;
-      const next = past ? "companion" : "hero";
-      if (next !== st.mode) {
-        st.setMode(next);
-        // Whatever the robot was saying belongs to where it just was.
-        useRobot.getState().hush();
-        if (next === "companion" && !lastCue) {
-          lastCue = "signals";
-          lastCueAt = performance.now();
-          const l = ROBOT_LINES.signals;
-          // Speak once it has landed in the corner.
-          window.setTimeout(() => {
-            if (useRobot.getState().mode === "companion") useRobot.getState().say(l.line, { mood: l.mood, corner: nextCorner() });
-          }, 1400);
+      const mode = past ? "companion" : "hero";
+      if (mode !== st.mode) {
+        st.hush();
+        clearTimeout(speakTimer);
+        clearTimeout(settleTimer);
+        pending = "";
+        if (mode === "companion") {
+          // Pick the first section's corner before switching, so the robot
+          // makes one move off the landing page, not two.
+          const key = sectionAtCentre() || "signals";
+          const line = ROBOT_LINES[key];
+          if (line) st.setCorner(line.corner);
+          st.setMode("companion");
+          present(key, true);
+        } else {
+          current = "";
+          st.setMode("hero");
         }
+        return;
       }
+      if (mode !== "companion" || st.hidden) return;
+      const key = sectionAtCentre();
+      if (!key || key === current || key === pending) return;
+      pending = key;
+      clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(() => {
+        pending = "";
+        if (sectionAtCentre() === key && useRobot.getState().mode === "companion") visit(key);
+      }, SETTLE_MS);
+    };
+
+    let raf = 0;
+    const onScroll = () => {
+      if (!raf)
+        raf = requestAnimationFrame(() => {
+          raf = 0;
+          update();
+        });
     };
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    const unsubIntro = useRobot.subscribe((s, prev) => {
+      if (s.introDone && !prev.introDone) onScroll();
+      // Brought back after being hidden: present wherever the page is now.
+      if (!s.hidden && prev.hidden) {
+        current = "";
+        onScroll();
+      }
+    });
 
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (!e.isIntersecting) continue;
-          const key = (e.target as HTMLElement).dataset.cue ?? "";
-          const st = useRobot.getState();
-          if (!st.introDone || st.mode !== "companion" || st.hidden) continue;
-          if (key === lastCue) continue;
-          const line = ROBOT_LINES[key];
-          if (!line) continue;
-          const now = performance.now();
-          if (now - lastCueAt < 1800) continue;
-          // A menu the visitor opened stays until they choose.
-          if (st.speech?.kind === "menu") continue;
-          lastCue = key;
-          lastCueAt = now;
-          st.say(line.line, { mood: line.mood, corner: nextCorner() });
-        }
-      },
-      { rootMargin: "-48% 0px -48% 0px" }
-    );
-    const observe = () => document.querySelectorAll("[data-cue]").forEach((el) => io.observe(el));
-    observe();
-    const mo = new MutationObserver(observe);
-    mo.observe(document.body, { childList: true, subtree: true });
-
-    // Idle nudge: long quiet stretch while in companion mode.
+    // Idle nudge: a long quiet stretch in the companion gets one short line.
     let idleTimer = 0;
     let idleIdx = 0;
     const arm = () => {
@@ -329,13 +379,10 @@ function Director() {
       idleTimer = window.setTimeout(() => {
         const st = useRobot.getState();
         if (st.mode === "companion" && !st.speech && !st.hidden) {
-          st.say(ROBOT_IDLE_LINES[idleIdx++ % ROBOT_IDLE_LINES.length], {
-            mood: idleIdx % 2 ? "peek" : "wave",
-            corner: nextCorner(),
-          });
+          st.say(ROBOT_IDLE_LINES[idleIdx++ % ROBOT_IDLE_LINES.length]);
         }
         arm();
-      }, 16000);
+      }, 30000);
     };
     arm();
     const activity = () => arm();
@@ -344,11 +391,14 @@ function Director() {
 
     return () => {
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
       window.removeEventListener("scroll", activity);
       window.removeEventListener("pointerdown", activity);
+      cancelAnimationFrame(raf);
       clearTimeout(idleTimer);
-      io.disconnect();
-      mo.disconnect();
+      clearTimeout(settleTimer);
+      clearTimeout(speakTimer);
+      unsubIntro();
     };
   }, []);
   return null;

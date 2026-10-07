@@ -77,17 +77,18 @@ function targetFor(key: Spot, w: number, h: number) {
   return { x: right ? w - inset : inset, y, h: size, ry: right ? -0.38 : 0.38 };
 }
 
-const pick = <T,>(list: T[]): T => list[Math.floor(Math.random() * list.length)];
-
-/** Ways off the screen from a spot, and ways back on to one. */
-function exitsFor(key: Spot): Edge[] {
-  if (key === "hero") return ["top"];
-  const side: Edge = key === "br" || key === "tr" ? "right" : "left";
-  return key === "tl" || key === "tr" ? ["top", side] : ["top", side, "bottom"];
-}
-function entriesFor(key: Spot): Edge[] {
-  const side: Edge = key === "br" || key === "tr" ? "right" : "left";
-  return key === "tl" || key === "tr" ? ["top", side] : ["top", side, "bottom"];
+/**
+ * How the robot travels between spots, by rule rather than at random:
+ *   - from or to the landing page: leap off the top, drop in from above;
+ *   - same side, other row (e.g. top-left to bottom-left): slide out of the
+ *     side edge and back in at the new height;
+ *   - other side: leap over the top and drop into the new corner.
+ */
+function routeFor(from: Spot | null, to: Spot): { out: Edge; in: Edge } {
+  if (!from || from === "hero" || to === "hero") return { out: "top", in: "top" };
+  const sideOf = (k: Spot): Edge => (k === "br" || k === "tr" ? "right" : "left");
+  if (sideOf(from) === sideOf(to)) return { out: sideOf(from), in: sideOf(to) };
+  return { out: "top", in: "top" };
 }
 
 /** How far the landing page has scrolled, capped once it is off screen. */
@@ -193,6 +194,11 @@ if (uReveal.z > 0.5) {
   // the first frame. A skinned mesh's geometry box is the unposed bind pose,
   // which is not the size you see, so this uses the skinned vertices.
   const botH = useRef(0);
+  // The clean animated pose of the bones we override, saved every frame.
+  const cleanPose = useRef({
+    q: new Map<THREE.Object3D, THREE.Quaternion>(),
+    s: new Map<THREE.Object3D, THREE.Vector3>(),
+  });
   const posKey = useRef<Spot | null>(null);
   const pointer = useRef({ x: 0.5, y: 0.5, seen: false });
 
@@ -264,22 +270,21 @@ if (uReveal.z > 0.5) {
       const tl = gsap.timeline();
       const size = p.h;
 
-      // ── Off the screen, a different way each time ──────────────────
-      const out = pick(exitsFor(from ?? "br"));
+      // ── Off the screen, by the route for this move ─────────────────
+      const route = routeFor(from, key);
+      const out = route.out;
       tl.to(p, { sq: 0.82, duration: 0.13, ease: "power2.out" }).add(() => sfx.jump());
       if (out === "top") {
-        tl.to(p, { sq: 1.12, duration: 0.12, ease: "power2.out" }).to(
+        tl.to(p, { sq: 1.1, duration: 0.12, ease: "power2.out" }).to(
           p,
-          { y: -size * 0.4, x: p.x + (p.x > w / 2 ? -1 : 1) * size * 0.3, rz: (Math.random() - 0.5) * 1.2, duration: 0.5, ease: "power2.in" },
+          { y: -size * 0.4, x: p.x + (p.x > w / 2 ? -1 : 1) * size * 0.25, rz: p.x > w / 2 ? 0.35 : -0.35, duration: 0.5, ease: "power2.in" },
           "<"
         );
-      } else if (out === "bottom") {
-        tl.to(p, { sq: 1.08, duration: 0.1 }).to(p, { y: h + size * 1.2, rz: (Math.random() - 0.5) * 0.6, duration: 0.45, ease: "back.in(1.6)" });
       } else {
         const dir = out === "right" ? 1 : -1;
-        tl.to(p, { sq: 1.1, ry: dir * 1.1, duration: 0.12 })
-          .to(p, { x: dir > 0 ? w + size : -size, rz: -dir * 0.5, duration: 0.5, ease: "power2.in" })
-          .to(p, { hop: 0.35, duration: 0.25, ease: "power2.out", yoyo: true, repeat: 1 }, "<");
+        tl.to(p, { sq: 1.05, ry: dir * 1.1, duration: 0.14 })
+          .to(p, { x: dir > 0 ? w + size : -size, rz: -dir * 0.3, duration: 0.45, ease: "power2.in" })
+          .to(p, { hop: 0.25, duration: 0.22, ease: "power2.out", yoyo: true, repeat: 1 }, "<");
       }
 
       if (key === "hero") {
@@ -293,7 +298,7 @@ if (uReveal.z > 0.5) {
       }
 
       // ── …and back on to the new spot from one of its edges ─────────
-      const inn = pick(entriesFor(key));
+      const inn = route.in;
       const land = () => {
         sfx.land();
         setFace({ eyes: "happy", mouth: "open" }, 900);
@@ -347,7 +352,9 @@ if (uReveal.z > 0.5) {
       const hero = useRobot.getState().mode === "hero";
       switch (mood) {
         case "wave":
-          playSeg("wave", { then: hero ? "play" : "idle", fade: 0.25 });
+          // Wave, then back to the calm idle. (The clip's hologram-juggling
+          // routine is never used: its head chases toys we don't show.)
+          playSeg("wave", { then: "idle", fade: 0.25 });
           break;
         case "happy":
           setFace({ eyes: "happy", mouth: "open" }, 1200);
@@ -420,7 +427,28 @@ if (uReveal.z > 0.5) {
     const now = performance.now();
     const s = useRobot.getState();
 
+    // Bones we override after the mixer (head turn, face swaps) are put back
+    // to the clean animated pose first. Three.js only rewrites a bone when
+    // its animated value changes, so on a held pose the mixer leaves our
+    // previous frame's override in place; without this the head turn piled
+    // up every frame into a continuous spin, and blinks could stick.
+    const pure = cleanPose.current;
+    for (const [bone, q] of pure.q) bone.quaternion.copy(q);
+    for (const [bone, sc] of pure.s) bone.scale.copy(sc);
+
     mixer.update(Math.min(dt, 1 / 20));
+
+    if (parts.head) {
+      const q = pure.q.get(parts.head);
+      if (q) q.copy(parts.head.quaternion);
+      else pure.q.set(parts.head, parts.head.quaternion.clone());
+    }
+    for (const bone of Object.values(parts.faceBones)) {
+      if (!bone) continue;
+      const sc = pure.s.get(bone);
+      if (sc) sc.copy(bone.scale);
+      else pure.s.set(bone, bone.scale.clone());
+    }
 
     if (!botH.current) {
       g.position.set(0, 0, 0);
@@ -480,10 +508,10 @@ if (uReveal.z > 0.5) {
     const sy = window.scrollY;
     const vel = (sy - a.lastScrollY) / Math.max(dt * 60, 1);
     a.lastScrollY = sy;
-    const leanT = companion ? THREE.MathUtils.clamp(-vel * 0.006, -0.24, 0.24) : 0;
+    const leanT = companion ? THREE.MathUtils.clamp(-vel * 0.004, -0.14, 0.14) : 0;
     a.lean += (leanT - a.lean) * (1 - Math.exp(-dt * 5));
     // Companion: a slow hover. Landing: just breathing.
-    const bob = companion ? Math.sin(now / 620) * p.h * 0.018 : Math.sin(now / 1100) * p.h * 0.005;
+    const bob = companion ? Math.sin(now / 900) * p.h * 0.01 : Math.sin(now / 1100) * p.h * 0.005;
     // On the landing the whole body turns a little toward the cursor.
     const bodyT =
       !companion && pointer.current.seen

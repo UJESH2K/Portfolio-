@@ -43,6 +43,8 @@ type RobotState = {
   setProgress: (p: number) => void;
   setReady: () => void;
   setMode: (mode: RobotMode) => void;
+  /** Send the companion to a corner (it travels there), without speaking. */
+  setCorner: (corner: RobotCorner) => void;
   say: (text: string, opts?: { mood?: RobotMood; chips?: BalloonChip[]; kind?: Speech["kind"]; corner?: RobotCorner }) => void;
   hush: () => void;
   /** Play a mood without saying anything (hover reactions, easter eggs). */
@@ -68,6 +70,7 @@ export const useRobot = create<RobotState>((set) => ({
   setProgress: (progress) => set({ progress }),
   setReady: () => set({ ready: true, progress: 1 }),
   setMode: (mode) => set({ mode }),
+  setCorner: (corner) => set({ corner }),
   say: (text, opts = {}) =>
     set((s) => ({
       speech: { key: ++speechKey, text, chips: opts.chips, kind: opts.kind ?? (opts.chips ? "menu" : "line") },

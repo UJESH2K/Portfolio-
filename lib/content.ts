@@ -1380,22 +1380,27 @@ export const FOOTER = {
  * it lands on screen; `mood` picks the face and the move it makes.
  */
 export type RobotMood = "wave" | "happy" | "think" | "cheer" | "peek" | "dizzy" | "sleep";
-/** Where the companion sits: any corner, picked at random per section. */
+/** Where the companion sits: one of the four corners, set per section. */
 export type RobotCorner = "br" | "bl" | "tr" | "tl";
 
-export const ROBOT_LINES: Record<string, { line: string; mood: RobotMood; corner: RobotCorner }> = {
-  signals: { line: "I'll follow you down. Click me any time for shortcuts.", mood: "wave", corner: "br" },
-  story: { line: "The short version: eight chapters, all true.", mood: "happy", corner: "bl" },
-  build: { line: "Here's what he builds. Keep scrolling, the cards fly past.", mood: "happy", corner: "bl" },
-  work: { line: "The projects! One won Inception, one became a paper.", mood: "cheer", corner: "br" },
-  about: { line: "That's him on stage. He talks faster than I compute.", mood: "peek", corner: "bl" },
-  experience: { line: "Where he's worked: real users, real deadlines.", mood: "think", corner: "br" },
-  wins: { line: "Seven wins out of fifty-plus hackathons. I counted twice.", mood: "cheer", corner: "bl" },
-  wall: { line: "The photo wall! Hover a picture, it ripples.", mood: "happy", corner: "tr" },
-  research: { line: "GradMesh goes to IMPACT-2027 this January.", mood: "think", corner: "br" },
-  feed: { line: "For the day-to-day, these are his profiles.", mood: "happy", corner: "bl" },
-  offclock: { line: "Marathons and football. I mostly hover.", mood: "peek", corner: "br" },
-  faq: { line: "Short on time? The quick answers are here.", mood: "think", corner: "bl" },
+/**
+ * What the robot says as each section reaches the middle of the screen, and
+ * where it stands while it says it. Corners are chosen per section to keep
+ * clear of that section's heading and text, and alternate so it travels.
+ */
+export const ROBOT_LINES: Record<string, { line: string; mood?: RobotMood; corner: RobotCorner }> = {
+  signals: { line: "I'll follow you down. Click me any time for shortcuts.", mood: "wave", corner: "tl" },
+  story: { line: "The short version: eight chapters, all true.", corner: "tr" },
+  build: { line: "Here's what he builds. Keep scrolling, the cards fly past.", corner: "br" },
+  work: { line: "The projects! One won Inception, one became a paper.", corner: "bl" },
+  about: { line: "That's him on stage. He talks faster than I compute.", corner: "tr" },
+  experience: { line: "Where he's worked: real users, real deadlines.", corner: "br" },
+  wins: { line: "Seven wins out of fifty-plus hackathons. I counted twice.", mood: "cheer", corner: "tr" },
+  wall: { line: "The photo wall! Hover a picture, it ripples.", corner: "bl" },
+  research: { line: "GradMesh goes to IMPACT-2027 this January.", corner: "tr" },
+  feed: { line: "For the day-to-day, these are his profiles.", corner: "bl" },
+  offclock: { line: "Marathons and football. I mostly hover.", corner: "tr" },
+  faq: { line: "Short on time? The quick answers are here.", corner: "bl" },
   contact: { line: "That's the tour! His inbox is right here.", mood: "wave", corner: "br" },
 };
 
