@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { HERO, SITE_NAV, SOCIALS, WORK, isMissing } from "@/lib/content";
 import { goTo, useRobot } from "@/lib/robot";
+import NavPill from "./NavPill";
 
 /**
- * The fixed frame around every page: wordmark, two-column nav (only while
- * the hero is on screen), burger + full menu, and the bottom bar with a live
- * Bengaluru clock and the sound switch. Everything blends with `difference`
- * so it reads on the dark hero and the paper pages alike.
+ * The fixed frame around every page: wordmark, the chapter capsule
+ * (NavPill), burger + full menu, and the bottom bar with a live Bengaluru
+ * clock and the sound switch. The wordmark, burger and bar blend with
+ * `difference` so they read on dark and paper sections alike; the capsule
+ * carries its own dark surface.
  */
 
 function useClock(tz: string) {
@@ -42,19 +44,11 @@ function Turbine() {
 
 export default function Chrome() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [navHidden, setNavHidden] = useState(false);
   const muted = useRobot((s) => s.muted);
   const toggleMuted = useRobot((s) => s.toggleMuted);
   const time = useClock(HERO.timezone);
   const closeRef = useRef<HTMLButtonElement>(null);
   const burgerRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    const onScroll = () => setNavHidden(window.scrollY > window.innerHeight * 0.25);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -77,7 +71,7 @@ export default function Chrome() {
     window.setTimeout(() => goTo(href), menuOpen ? 450 : 0);
   };
 
-  const links = [{ label: "Home", href: "#top" }, ...SITE_NAV.primary, ...SITE_NAV.secondary];
+  const links = [{ label: "Home", href: "#top" }, ...SITE_NAV];
   const socials = SOCIALS.filter((s) => s.id !== "email" && !isMissing(s.href));
 
   return (
@@ -90,26 +84,7 @@ export default function Chrome() {
         Ujesh Yadav<sup>®</sup>
       </a>
 
-      <nav className={`chrome chrome--nav${navHidden ? " is-hidden" : ""}`} aria-label="Primary">
-        <ul>
-          {SITE_NAV.primary.map((l) => (
-            <li key={l.href}>
-              <a href={l.href} onClick={navigate(l.href)}>
-                {l.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-        <ul>
-          {SITE_NAV.secondary.map((l) => (
-            <li key={l.href}>
-              <a href={l.href} onClick={navigate(l.href)}>
-                {l.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <NavPill navigate={navigate} openMenu={() => setMenuOpen(true)} />
 
       <button
         ref={burgerRef}

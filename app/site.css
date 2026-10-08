@@ -372,8 +372,13 @@
   color: var(--white);
   mix-blend-mode: difference;
 }
+/* The wordmark, the chapter capsule and the burger share one centre line,
+   --bar-y from the top of the window. */
+:root {
+  --bar-y: 44px;
+}
 .chrome--logo {
-  top: 34px;
+  top: calc(var(--bar-y) - 11px);
   left: var(--gutter);
   font-family: var(--font-h);
   font-weight: 500;
@@ -390,46 +395,259 @@
   letter-spacing: 0;
   margin-top: -2px;
 }
-.chrome--nav {
-  top: 34px;
-  left: 28vw;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(160px, 22vw));
-  font-size: 16px;
-  line-height: 1.55;
+.navpill {
+  position: fixed;
+  z-index: 61;
+  top: calc(var(--bar-y) - 22px);
+  left: 50%;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 6px 0 17px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(13, 13, 13, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 14px 34px -18px rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  color: var(--white);
+  font-size: 14px;
+  line-height: 1;
+  transform: translate3d(-50%, 0, 0);
   transition:
-    opacity 0.5s var(--ease),
-    transform 0.6s var(--ease);
+    opacity 0.4s var(--ease),
+    visibility 0s linear 0s;
 }
-.chrome--nav.is-hidden {
-  opacity: 0;
-  transform: translate3d(0, -12px, 0);
-  pointer-events: none;
-}
-.chrome--nav a {
+/* A live dot, pinging softly. */
+.navpill__dot {
   position: relative;
-  display: inline-block;
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-right: 11px;
+  border-radius: 50%;
+  background: var(--ember);
 }
-.chrome--nav a::after {
+.navpill__dot::after {
   content: "";
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 1px;
-  height: 1px;
-  background: currentColor;
-  transform: scaleX(0);
-  transform-origin: right;
-  transition: transform 0.5s var(--ease);
+  inset: -4px;
+  border: 1px solid var(--ember);
+  border-radius: 50%;
+  animation: navpill-ping 2.6s var(--ease-soft) infinite;
+}
+@keyframes navpill-ping {
+  0% {
+    transform: scale(0.4);
+    opacity: 0.9;
+  }
+  70%,
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+/* "04/07": only while condensed. Tracks animate between 0fr and 1fr, so
+   nothing here may carry padding (it would hold a 0fr track open). */
+.navpill__count {
+  display: grid;
+  grid-template-columns: 0fr;
+  transition: grid-template-columns 0.6s var(--ease);
+}
+.navpill__count > span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-family: var(--font-m);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.5);
+}
+.navpill__count > span::after {
+  content: "";
+  display: inline-block;
+  width: 4px;
+}
+.navpill__num {
+  display: inline-block;
+  color: var(--white);
+  animation: navpill-num 0.5s var(--ease);
+}
+@keyframes navpill-num {
+  from {
+    transform: translate3d(0, 110%, 0);
+    opacity: 0;
+  }
+}
+.navpill__track {
+  position: relative;
+}
+.navpill ul {
+  display: flex;
+  align-items: center;
+}
+.navpill li {
+  display: grid;
+  grid-template-columns: 1fr;
+  transition:
+    grid-template-columns 0.6s var(--ease),
+    opacity 0.4s var(--ease);
+}
+.navpill a {
+  position: relative;
+  z-index: 1;
+  display: block;
+  min-width: 0;
+  height: 32px;
+  overflow: hidden;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.7);
+  transition: color 0.35s var(--ease);
+}
+.navpill li.is-lit a {
+  color: var(--ink);
+}
+/* Hover rolls the label up and a copy of it in from below. */
+.navpill__t {
+  display: block;
+  height: 32px;
+  padding: 0 13px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.navpill__t i {
+  display: block;
+  font-style: normal;
+  line-height: 32px;
+  text-shadow: 0 32px currentColor;
+  transition: transform 0.55s var(--ease);
 }
 @media (hover: hover) {
-  .chrome--nav a:hover::after {
-    transform: scaleX(1);
-    transform-origin: left;
+  .navpill li:not(.is-lit) a:hover {
+    color: var(--white);
+  }
+  .navpill a:hover .navpill__t i {
+    transform: translate3d(0, -32px, 0);
+  }
+}
+/* The marker behind the chapter being read, or the link under the pointer. */
+.navpill__mark {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 0;
+  height: 32px;
+  margin-top: -16px;
+  border-radius: 999px;
+  background: var(--paper);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.55s cubic-bezier(0.34, 1.2, 0.64, 1),
+    width 0.55s cubic-bezier(0.34, 1.2, 0.64, 1),
+    opacity 0.3s var(--ease);
+}
+/* How far through the current chapter. */
+.navpill__read {
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  bottom: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transition: opacity 0.4s var(--ease);
+}
+.navpill__read::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--ember);
+  transform-origin: left;
+  transform: scaleX(var(--cp, 0));
+}
+.navpill.is-compact .navpill__read {
+  opacity: 1;
+}
+/* Condensed: only the chapter being read. */
+.navpill.is-compact li:not(.is-active) {
+  grid-template-columns: 0fr;
+  opacity: 0;
+}
+.navpill.is-compact .navpill__count {
+  grid-template-columns: 1fr;
+}
+/* Hover or keyboard focus opens the full row again. */
+@media (hover: hover) and (min-width: 1024px) {
+  .navpill.is-compact:hover li:not(.is-active) {
+    grid-template-columns: 1fr;
+    opacity: 1;
+  }
+  .navpill.is-compact:hover .navpill__count {
+    grid-template-columns: 0fr;
+  }
+}
+@media (min-width: 1024px) {
+  .navpill.is-compact:has(a:focus-visible) li:not(.is-active) {
+    grid-template-columns: 1fr;
+    opacity: 1;
+  }
+  .navpill.is-compact:has(a:focus-visible) .navpill__count {
+    grid-template-columns: 0fr;
+  }
+}
+/* Phones and tablets: the condensed capsule sits beside the burger, shows
+   up once a chapter is being read, and a tap on it opens the menu. */
+@media (max-width: 1023px) {
+  .navpill {
+    left: auto;
+    right: calc(var(--gutter) + 58px);
+    transform: none;
+    cursor: pointer;
+  }
+  .navpill:not(.is-compact) {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity 0.4s var(--ease),
+      visibility 0s linear 0.4s;
+  }
+}
+@media (max-width: 809px) {
+  .navpill {
+    top: calc(var(--bar-y) - 19px);
+    height: 38px;
+    padding: 0 4px 0 13px;
+    font-size: 13px;
+  }
+  .navpill a,
+  .navpill__t {
+    height: 30px;
+  }
+  .navpill__t {
+    padding: 0 11px;
+  }
+  .navpill__t i {
+    line-height: 30px;
+    text-shadow: 0 30px currentColor;
+  }
+  .navpill__mark {
+    height: 30px;
+    margin-top: -15px;
+  }
+  .navpill__dot {
+    margin-right: 9px;
+  }
+}
+@media (max-width: 400px) {
+  .navpill__count {
+    display: none;
   }
 }
 .chrome--burger {
-  top: 30px;
+  top: calc(var(--bar-y) - 15px);
   right: var(--gutter);
   width: 44px;
   height: 30px;
@@ -915,7 +1133,7 @@
 
 .orbit {
   position: relative;
-  height: 420vh;
+  height: 500vh;
 }
 .orbit__pin {
   position: sticky;
@@ -2260,10 +2478,6 @@
 /* ─── Responsive ────────────────────────────────────────────────────── */
 
 @media (max-width: 1100px) {
-  .chrome--nav {
-    left: 24vw;
-    grid-template-columns: repeat(2, minmax(130px, 20vw));
-  }
   .skills__grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -2294,15 +2508,12 @@
 }
 
 @media (max-width: 809px) {
-  .chrome--nav {
-    display: none;
+  :root {
+    --bar-y: 34px;
   }
   .chrome--logo {
-    top: 24px;
+    top: calc(var(--bar-y) - 10px);
     font-size: 20px;
-  }
-  .chrome--burger {
-    top: 18px;
   }
   .hbar {
     bottom: 14px;
@@ -2343,7 +2554,7 @@
     aspect-ratio: 4 / 3;
   }
   .orbit {
-    height: 340vh;
+    height: 400vh;
   }
   .about__stage {
     grid-template-columns: 1fr;
@@ -2482,8 +2693,8 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Landing page, speech bubbles, the robot's controls, idle doodles and
-   "the story so far". Red-black smoke, one robot, no comic styling.
+   Landing page, speech bubbles, the robot's controls and "the story so
+   far". One robot, no comic styling.
    ═══════════════════════════════════════════════════════════════════════ */
 
 .hero__eyebrow {
@@ -2730,99 +2941,17 @@
   font-weight: 500;
 }
 
-/* Sound switch sits at the right end of the bottom bar. */
+/* Sound switch sits at the right end of the bottom bar, on its line. */
 .hbar__sound.chrome {
   position: fixed;
   right: var(--gutter);
-  bottom: 18px;
+  bottom: 22px;
   font-size: 14px;
 }
-
-/* ─── Idle doodles ──────────────────────────────────────────────────── */
-
-.doodles {
-  position: fixed;
-  inset: 0;
-  z-index: 48;
-  pointer-events: none;
-  color: var(--ember-2);
-}
-.doodles__hint {
-  position: absolute;
-  left: 0;
-  top: 0;
-  opacity: 0;
-  animation: doodle-in 0.6s var(--ease-soft) forwards;
-  animation-delay: var(--d);
-}
-@keyframes doodle-in {
-  to {
-    opacity: 1;
-  }
-}
-.doodles__float {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  animation: hint-float 3.4s ease-in-out infinite;
-}
-@keyframes hint-float {
-  0%,
-  100% {
-    transform: translate(0, 0);
-  }
-  50% {
-    transform: translate(-4px, 2px);
-  }
-}
-.doodles__label {
-  font-family: var(--font-h);
-  font-weight: 500;
-  font-size: 17px;
-  white-space: nowrap;
-}
-.doodle .doodle-line {
-  stroke-dasharray: 130;
-  stroke-dashoffset: 130;
-  animation: doodle-draw 3.6s ease-in-out infinite;
-}
-@keyframes doodle-draw {
-  0% {
-    stroke-dashoffset: 130;
-    opacity: 0;
-  }
-  12% {
-    opacity: 1;
-  }
-  48%,
-  84% {
-    stroke-dashoffset: 0;
-    opacity: 1;
-  }
-  100% {
-    stroke-dashoffset: 0;
-    opacity: 0;
-  }
-}
-.doodle .doodle-head {
-  stroke-dasharray: 34;
-  stroke-dashoffset: 34;
-  animation: doodle-head 3.6s ease-in-out infinite;
-}
-@keyframes doodle-head {
-  0%,
-  40% {
-    stroke-dashoffset: 34;
-    opacity: 0;
-  }
-  56%,
-  84% {
-    stroke-dashoffset: 0;
-    opacity: 1;
-  }
-  100% {
-    stroke-dashoffset: 0;
-    opacity: 0;
+@media (max-width: 809px) {
+  .hbar__sound.chrome {
+    bottom: 14px;
+    font-size: 12px;
   }
 }
 
@@ -2991,16 +3120,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .doodles__float,
-  .doodle .doodle-line,
-  .doodle .doodle-head,
   .hero__next svg {
     animation: none !important;
-  }
-  .doodle .doodle-line,
-  .doodle .doodle-head {
-    stroke-dashoffset: 0 !important;
-    opacity: 1 !important;
   }
   .hero__lead,
   .hero__actions {
@@ -3061,6 +3182,10 @@ img.is-liquid {
 }
 .wall__tile.is-wide {
   grid-column: span 2;
+}
+.wall__tile.is-feature {
+  grid-column: span 2;
+  grid-row: span 2;
 }
 .wall__tile.is-tall {
   grid-row: span 2;

@@ -37,7 +37,7 @@ export default function Footer() {
           <div className="footer__col">
             <p className="footer__h">Navigation</p>
             <ul>
-              {[...SITE_NAV.primary, ...SITE_NAV.secondary].map((l) => (
+              {SITE_NAV.map((l) => (
                 <li key={l.href}>
                   <a href={l.href}>{l.label}</a>
                 </li>

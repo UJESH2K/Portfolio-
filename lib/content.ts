@@ -736,18 +736,21 @@ export const INTERESTS: Interest[] = [
 // resume; nothing here is invented. Edit copy here, never in components.
 // ═════════════════════════════════════════════════════════════════════════
 
-export const SITE_NAV = {
-  primary: [
-    { label: "Work", href: "#work" },
-    { label: "Experience", href: "#experience" },
-    { label: "Research", href: "#research" },
-  ],
-  secondary: [
-    { label: "Wins", href: "#wins" },
-    { label: "About", href: "#about" },
-    { label: "Contact", href: "#contact" },
-  ],
-};
+/**
+ * The site's chapters, in page order. The top nav shows them as one row and
+ * marks the one being read; `from` is where that chapter starts when it is
+ * not the link target itself (the story opens with the signals and
+ * statement above it).
+ */
+export const SITE_NAV: { label: string; href: string; from?: string }[] = [
+  { label: "Story", href: "#story", from: "#main" },
+  { label: "Work", href: "#work" },
+  { label: "About", href: "#about" },
+  { label: "Experience", href: "#experience" },
+  { label: "Wins", href: "#wins" },
+  { label: "Research", href: "#research" },
+  { label: "Contact", href: "#contact" },
+];
 
 export const PRELOADER = {
   intro: [
@@ -871,6 +874,8 @@ export const SIGNALS = {
     { name: "Hitachi", tag: "ML internship" },
     { name: "Inception", tag: "Winner" },
     { name: "Denova", tag: "Winner" },
+    { name: "Cardano", tag: "Winner" },
+    { name: "Cypher 1 & 3", tag: "Winner ×2" },
     { name: "IMPACT-2027", tag: "Paper accepted" },
     { name: "MNNIT Allahabad", tag: "Book chapter" },
     { name: "LitmusChaos", tag: "Open source" },
@@ -924,13 +929,16 @@ export const CAPABILITIES: Capability[] = [
   },
 ];
 
-/** Photos that fly past between the capability cards. */
+/** Photos that fly past between the capability cards: him and his team. */
 export const CAPABILITY_MEDIA: { src: string; alt: string }[] = [
-  { src: "/media/life-hacking-floor", alt: "A packed hackathon floor under a 'Let the hacking begin' banner" },
-  { src: "/media/life-mic", alt: "Ujesh presenting with a microphone to a seated room" },
-  { src: "/media/work-edactly-1", alt: "The Edactly landing page" },
-  { src: "/media/life-swag", alt: "A pile of hackathon t-shirts, bags and badges" },
-  { src: "/media/work-easemed", alt: "The EaseMed landing page: where healthcare demand meets global supply" },
+  { src: "/media/life-mic", alt: "Ujesh pitching with a microphone" },
+  { src: "/media/win-cypher", alt: "The team on stage with certificates at Cypher" },
+  { src: "/media/win-inception-solo", alt: "Ujesh with the Inception winner's cheque" },
+  { src: "/media/life-hacking-floor", alt: "A packed hackathon floor" },
+  { src: "/media/life-selfie", alt: "A team selfie at a hackathon" },
+  { src: "/media/life-talk", alt: "Ujesh speaking into a microphone" },
+  { src: "/media/life-build-1", alt: "The team coding side by side" },
+  { src: "/media/win-cardano-cheque", alt: "Holding the cheque at the Cardano hackathon" },
 ];
 
 export const SKILL_GROUPS: { group: string; items: string[] }[] = [
@@ -1161,13 +1169,6 @@ export const WINS_INTRO = {
 
 export const WINS: Win[] = [
   {
-    name: "Inception",
-    result: "Winner",
-    detail: "India's first world-model hackathon, with WorldForge AI.",
-    image: "/media/win-inception",
-    imageAlt: "The team holding the Inception winner's cheque",
-  },
-  {
     name: "Denova",
     result: "Winner · Solana track",
     detail: "International blockchain hackathon.",
@@ -1175,11 +1176,32 @@ export const WINS: Win[] = [
     imageAlt: "Presenting at the Denova hackathon",
   },
   {
-    name: "Cypher 1 & 3",
-    result: "Winner, twice",
+    name: "Inception",
+    result: "Winner",
+    detail: "India's first world-model hackathon, with WorldForge AI.",
+    image: "/media/win-inception",
+    imageAlt: "The team holding the Inception winner's cheque",
+  },
+  {
+    name: "Cardano",
+    result: "Winner",
+    detail: "Cardano hackathon.",
+    image: "/media/win-cardano-cheque",
+    imageAlt: "Holding the cheque at the Cardano hackathon",
+  },
+  {
+    name: "Cypher 1",
+    result: "Winner",
     detail: "Atria Institute of Technology.",
     image: "/media/win-cypher",
     imageAlt: "Winners on stage with certificates at Cypher",
+  },
+  {
+    name: "Cypher 3",
+    result: "Winner, again",
+    detail: "Atria Institute of Technology.",
+    image: "/media/win-cypher-2",
+    imageAlt: "Certificates in hand after Cypher 3",
   },
   {
     name: "HackerRank Orchestrate",
@@ -1213,26 +1235,53 @@ export const WINS: Win[] = [
 ];
 
 /**
- * The hackathon wall: every photo from images/winning. Results come from the
- * resume; where a result isn't on it (Cardano), only the event is shown.
+ * The photo wall: every photo of Ujesh, his teams and friends — the
+ * hackathon wins, the stages, the floors. Product screenshots live in their
+ * own sections, never here. Results come from the resume or from Ujesh;
+ * other photos get a plain description, never an invented event.
+ * `feature` = 2×2 tile, `tall` = two rows, `wide` = two columns.
  */
-export type WallPhoto = { src: string; alt: string; event: string; result?: string; tall?: boolean; wide?: boolean };
+export type WallPhoto = {
+  src: string;
+  alt: string;
+  event: string;
+  result?: string;
+  feature?: boolean;
+  tall?: boolean;
+  wide?: boolean;
+};
 
 export const HACK_WALL = {
-  eyebrow: "Hackathon wall",
+  eyebrow: "On the floor",
   title: "Cheques, certificates and very little sleep.",
-  text: "Proof from the floor: the photos from the weekends that ended on stage.",
+  text: "Hackathons, stages, teammates and friends: the people and the moments behind the work.",
   photos: [
-    { src: "/media/win-inception", alt: "The team holding the Inception winner's cheque", event: "Inception", result: "Winner", wide: true, tall: true },
+    { src: "/media/win-cypher", alt: "The team on stage with certificates at Cypher", event: "Cypher 1", result: "Winner", feature: true },
     { src: "/media/win-denova", alt: "Presenting the build at Denova", event: "Denova", result: "Winner · Solana track", wide: true },
-    { src: "/media/win-inception-solo", alt: "Ujesh with the Inception cheque", event: "Inception", result: "Winner", tall: true },
-    { src: "/media/win-cypher", alt: "Winners on stage with certificates at Cypher", event: "Cypher", result: "Winner" },
-    { src: "/media/win-cardano-cheque", alt: "Two teammates holding a cheque at the Cardano hackathon", event: "Cardano hackathon", tall: true },
+    { src: "/media/win-cardano-cheque", alt: "Holding the cheque at the Cardano hackathon", event: "Cardano hackathon", result: "Winner", tall: true },
+    { src: "/media/win-inception", alt: "The team holding the Inception winner's cheque", event: "Inception", result: "Winner" },
     { src: "/media/win-gsc", alt: "The team at the Google Solution Challenge bootcamp", event: "Google Solution Challenge", result: "Regional qualifier" },
-    { src: "/media/win-cypher-2", alt: "Certificates in hand at Cypher", event: "Cypher, again", result: "Winner" },
-    { src: "/media/win-inception-3", alt: "The Inception team on stage", event: "Inception", result: "Winner" },
-    // NEEDS_INPUT: add the Cardano placement as `result` once confirmed.
-    { src: "/media/win-cardano-floor", alt: "The Cardano hackathon floor", event: "Cardano hackathon", wide: true },
+    { src: "/media/life-hacking-floor", alt: "A packed hackathon floor under a 'Let the hacking begin' banner", event: "Let the hacking begin", feature: true },
+    { src: "/media/life-talk", alt: "Ujesh speaking into a microphone", event: "On the mic", tall: true },
+    { src: "/media/win-cypher-2", alt: "Certificates in hand after Cypher 3", event: "Cypher 3", result: "Winner" },
+    { src: "/media/win-hackerrank", alt: "Teams at the HackerRank Orchestrate finals", event: "HackerRank Orchestrate", result: "Bronze" },
+    { src: "/media/win-inception-solo", alt: "Ujesh with the Inception winner's cheque", event: "Inception", result: "Winner", tall: true },
+    { src: "/media/life-focus", alt: "Teammates heads down at their laptops", event: "Heads down", wide: true },
+    { src: "/media/life-selfie", alt: "A team selfie at a hackathon", event: "Team selfie" },
+    { src: "/media/life-mic", alt: "Ujesh pitching with a microphone", event: "Pitching the build" },
+    { src: "/media/life-podium", alt: "Ujesh at the podium", event: "At the podium", tall: true },
+    { src: "/media/life-hall", alt: "A full hall at a hackathon", event: "A full hall", wide: true },
+    { src: "/media/life-crowd", alt: "A large group photo of participants", event: "Everyone who showed up" },
+    { src: "/media/win-cardano-floor", alt: "The Cardano hackathon floor", event: "Cardano hackathon" },
+    { src: "/media/life-build-2", alt: "Ujesh at his laptop, a teammate in headphones beside him", event: "Shipping before the deadline" },
+    { src: "/media/life-demo", alt: "Ujesh presenting a demo", event: "Demo time" },
+    { src: "/media/life-group", alt: "A big group photo on a staircase", event: "The whole crew", wide: true },
+    { src: "/media/win-inception-3", alt: "The Inception team with their cheque", event: "Inception", result: "Winner" },
+    { src: "/media/life-desk", alt: "Two teammates working at one desk", event: "Pair programming" },
+    { src: "/media/life-build-1", alt: "The team coding side by side on a hackathon floor", event: "Mid-build" },
+    { src: "/media/life-classroom", alt: "Ujesh presenting to a classroom", event: "Running a session" },
+    { src: "/media/life-swag", alt: "A pile of hackathon t-shirts, bags and badges", event: "The swag pile" },
+    { src: "/media/life-build-3", alt: "Teammates at a hackathon, one looking at the camera", event: "The crew" },
   ] as WallPhoto[],
 };
 

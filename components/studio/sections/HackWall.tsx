@@ -3,7 +3,7 @@ import { HACK_WALL } from "@/lib/content";
 import { Eyebrow, Img, SplitWords } from "../primitives";
 
 /**
- * The hackathon wall: an editorial collage of every winning photo. Each one
+ * The photo wall: an editorial collage of every personal photo. Each one
  * ripples under the liquid effect (LiquidMedia, via `data-liquid`), lifts on
  * hover, catches a light sheen, and slides up its event and result.
  */
@@ -24,12 +24,16 @@ export default function HackWall() {
           {HACK_WALL.photos.map((ph, i) => (
             <li
               key={ph.src}
-              className={`wall__tile rv${ph.wide ? " is-wide" : ""}${ph.tall ? " is-tall" : ""}`}
+              className={`wall__tile rv${ph.feature ? " is-feature" : ""}${ph.wide ? " is-wide" : ""}${ph.tall ? " is-tall" : ""}`}
               data-rv
               style={{ "--d": `${(i % 4) * 0.06}s` } as CSSProperties}
             >
               <figure className="wall__fig" data-liquid="">
-                <Img src={ph.src} alt={ph.alt} sizes={ph.wide ? "(max-width: 809px) 92vw, 50vw" : "(max-width: 809px) 46vw, 25vw"} />
+                <Img
+                  src={ph.src}
+                  alt={ph.alt}
+                  sizes={ph.wide || ph.feature ? "(max-width: 809px) 92vw, 50vw" : "(max-width: 809px) 46vw, 25vw"}
+                />
                 <span className="wall__shine" aria-hidden="true" />
                 <figcaption className="wall__cap">
                   <b>{ph.event}</b>
