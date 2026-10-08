@@ -55,7 +55,7 @@ const MOUTHS = {
 };
 type Face = { eyes: keyof typeof EYES; mouth: keyof typeof MOUTHS };
 
-type Place = { x: number; y: number; h: number; rz: number; sq: number; hop: number; ry: number };
+type Place = { x: number; y: number; h: number; rz: number; sq: number; hop: number; ry: number; spin: number };
 
 type Spot = "hero" | "tl" | "tr" | "bl" | "br";
 type Edge = "top" | "bottom" | "left" | "right";
@@ -189,11 +189,12 @@ if (uReveal.z > 0.5) {
     lastScrollY: 0,
     bodyYaw: 0,
   });
-  const place = useRef<Place>({ x: 0, y: 0, h: 0, rz: 0, sq: 1, hop: 0, ry: 0 });
+  const place = useRef<Place>({ x: 0, y: 0, h: 0, rz: 0, sq: 1, hop: 0, ry: 0, spin: 0 });
   // Height of the posed robot (antennae to feet) in model units, measured on
   // the first frame. A skinned mesh's geometry box is the unposed bind pose,
   // which is not the size you see, so this uses the skinned vertices.
   const botH = useRef(0);
+  const spinning = useRef(false);
   // The clean animated pose of the bones we override, saved every frame.
   const cleanPose = useRef({
     q: new Map<THREE.Object3D, THREE.Quaternion>(),
@@ -257,13 +258,15 @@ if (uReveal.z > 0.5) {
       const t = targetFor(key, w, h);
       const p = place.current;
       gsap.killTweensOf(p);
+      // A travel cancels any spin in progress; self-righting clears the rest.
+      spinning.current = false;
       // On the landing the robot rides up with the page (see heroShift);
       // when it leaves, start from where it actually is on screen.
       const from = posKey.current;
       if (animate && from === "hero") p.y -= heroShift(h);
       posKey.current = key;
       if (!animate || reduced || p.h === 0) {
-        Object.assign(p, { x: t.x, y: t.y, h: t.h, ry: t.ry, rz: 0, sq: 1, hop: 0 });
+        Object.assign(p, { x: t.x, y: t.y, h: t.h, ry: t.ry, rz: 0, sq: 1, hop: 0, spin: 0 });
         return;
       }
 
@@ -367,14 +370,27 @@ if (uReveal.z > 0.5) {
           playSeg("peek", { then: "idle" });
           break;
         case "dizzy": {
-          // A full spin with ">.<" eyes, then a wobbly little hop.
-          setFace({ eyes: "kawaii", mouth: "kawaii" }, 2400);
+          // A full spin with ">.<" eyes, then a wobbly little hop. The spin
+          // has its own channel that always ends at zero, so an interrupted
+          // or repeated spin can never leave the robot facing the wrong way;
+          // a spin already in progress is left to finish.
           const p = place.current;
-          const base = p.ry;
+          if (spinning.current) break;
+          spinning.current = true;
+          setFace({ eyes: "kawaii", mouth: "kawaii" }, 2400);
+          p.spin = 0;
           gsap
-            .timeline()
-            .to(p, { ry: base + Math.PI * 2, duration: 0.9, ease: "power2.inOut" })
-            .set(p, { ry: base })
+            .timeline({
+              onComplete: () => {
+                p.spin = 0;
+                spinning.current = false;
+              },
+              onInterrupt: () => {
+                spinning.current = false;
+              },
+            })
+            .to(p, { spin: Math.PI * 2, duration: 0.9, ease: "power2.inOut" })
+            .set(p, { spin: 0 })
             .to(p, { hop: 0.18, duration: 0.2, ease: "power2.out", yoyo: true, repeat: 1 });
           break;
         }
@@ -496,6 +512,22 @@ if (uReveal.z > 0.5) {
 
     // ── Placement ───────────────────────────────────────────────────────
     const p = place.current;
+    // Self-righting: whenever nothing is animating the robot, ease it back
+    // to exactly where and how it should stand at its current spot. However
+    // a jump, spin or reaction gets interrupted, it recovers on its own
+    // within a second or two instead of staying stuck.
+    if (p.h > 0 && posKey.current && !gsap.isTweening(p)) {
+      const rest = targetFor(posKey.current, size.width, size.height);
+      const k = 1 - Math.exp(-dt * 3);
+      p.x += (rest.x - p.x) * k;
+      p.y += (rest.y - p.y) * k;
+      p.h += (rest.h - p.h) * k;
+      p.ry += (rest.ry - p.ry) * k;
+      p.rz += (0 - p.rz) * k;
+      p.sq += (1 - p.sq) * k;
+      p.hop += (0 - p.hop) * k;
+      p.spin += (0 - p.spin) * k;
+    }
     // While it stands on the landing page it scrolls away with the page
     // instead of hanging in place over the next section.
     const yScreen = p.y - (posKey.current === "hero" ? heroShift(size.height) : 0);
@@ -523,7 +555,7 @@ if (uReveal.z > 0.5) {
     g.position.set((p.x + jitter - size.width / 2) * wpp, (size.height / 2 - yScreen) * wpp + p.hop * p.h * wpp, 0);
     g.scale.set(scale * (2 - p.sq) ** 0.5, scale * p.sq, scale * (2 - p.sq) ** 0.5);
     g.position.y += bob * wpp;
-    g.rotation.set(0, p.ry + a.bodyYaw, p.rz + a.lean * (p.x > size.width / 2 ? 1 : -1));
+    g.rotation.set(0, p.ry + p.spin + a.bodyYaw, p.rz + a.lean * (p.x > size.width / 2 ? 1 : -1));
     g.visible = !s.hidden && p.h > 0;
 
     // ── Hover colour reveal ─────────────────────────────────────────────

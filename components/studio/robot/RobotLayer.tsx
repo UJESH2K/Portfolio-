@@ -69,6 +69,24 @@ function Balloon() {
     return () => clearInterval(id);
   }, [speech]);
 
+  // Menus close themselves after a while unless the pointer is resting on
+  // them, so the page never stays parked on an open menu.
+  const hovering = useRef(false);
+  useEffect(() => {
+    if (!speech || speech.kind !== "menu" || !done) return;
+    const key = speech.key;
+    let id = 0;
+    const check = () => {
+      id = window.setTimeout(() => {
+        if (useRobot.getState().speech?.key !== key) return;
+        if (hovering.current) check();
+        else hush();
+      }, 15000);
+    };
+    check();
+    return () => clearTimeout(id);
+  }, [speech, done, hush]);
+
   // Plain lines go away by themselves; menus wait for a choice.
   useEffect(() => {
     if (!speech || speech.kind !== "line" || !done) return;
@@ -144,6 +162,8 @@ function Balloon() {
       }`}
       role="status"
       aria-live="polite"
+      onPointerEnter={() => (hovering.current = true)}
+      onPointerLeave={() => (hovering.current = false)}
     >
       <div className="balloon__in" key={speech?.key}>
         <p className="balloon__text">
@@ -195,6 +215,7 @@ function HitArea() {
   const lastHappy = useRef(0);
   // Easter egg: five quick clicks and it spins itself dizzy.
   const clicks = useRef<number[]>([]);
+  const dizzyUntil = useRef(0);
   useEffect(() => {
     let raf = 0;
     const loop = () => {
@@ -237,8 +258,10 @@ function HitArea() {
       onClick={(e) => {
         sfx.pop();
         const now = performance.now();
+        if (now < dizzyUntil.current) return;
         clicks.current = [...clicks.current.filter((t) => now - t < 2000), now];
         if (clicks.current.length >= 5) {
+          dizzyUntil.current = now + 2600;
           clicks.current = [];
           burst(e.clientX, e.clientY, 50);
           useRobot.getState().say(EASTER_EGGS.dizzy, { mood: "dizzy" });
