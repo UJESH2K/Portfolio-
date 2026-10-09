@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { RESEARCH, RESEARCH_INTRO, type Paper } from "@/lib/content";
-import { ArrowIcon, Eyebrow, SplitWords } from "../primitives";
+import { ArrowIcon, Eyebrow, Img, SplitWords } from "../primitives";
 import Scramble from "../Scramble";
 import { GradMeshVisual, OssVisual, VendorsVisual, ViksitVisual } from "./WorkVisual";
 
@@ -19,7 +19,10 @@ const Chevron = ({ flip }: { flip?: boolean }) => (
   </svg>
 );
 
-/** Papers and work in progress, as a horizontal strip with arrow controls. */
+/**
+ * Papers and work in progress: the heading beside a photo of him presenting
+ * results, then the papers as a horizontal strip with arrow controls.
+ */
 export default function Research() {
   const strip = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
@@ -57,15 +60,19 @@ export default function Research() {
             <SplitWords text={RESEARCH_INTRO.title} />
           </h2>
           <Scramble as="p" className="lede" text={RESEARCH_INTRO.text} duration={1100} />
+          <div className="research__nav">
+            <button className="arrow" type="button" aria-label="Previous" disabled={atStart} onClick={() => nudge(-1)}>
+              <Chevron flip />
+            </button>
+            <button className="arrow" type="button" aria-label="Next" disabled={atEnd} onClick={() => nudge(1)}>
+              <Chevron />
+            </button>
+          </div>
         </div>
-        <div className="research__nav">
-          <button className="arrow" type="button" aria-label="Previous" disabled={atStart} onClick={() => nudge(-1)}>
-            <Chevron flip />
-          </button>
-          <button className="arrow" type="button" aria-label="Next" disabled={atEnd} onClick={() => nudge(1)}>
-            <Chevron />
-          </button>
-        </div>
+        <figure className="research__photo rv" data-rv data-liquid="">
+          <Img src={RESEARCH_INTRO.photo.src} alt={RESEARCH_INTRO.photo.alt} sizes="(max-width: 809px) 92vw, 42vw" />
+          <figcaption>{RESEARCH_INTRO.photo.caption}</figcaption>
+        </figure>
       </div>
 
       <div className="research__strip" ref={strip} data-lenis-prevent-wheel>

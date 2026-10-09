@@ -2,8 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { Component, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { EASTER_EGGS, ROBOT_IDLE_LINES, ROBOT_LINES, ROBOT_MENU } from "@/lib/content";
-import { goTo, robotHover, robotTap, robotScreen, useRobot } from "@/lib/robot";
+import { ROBOT_CLICKS, ROBOT_IDLE_LINES, ROBOT_LINES, ROBOT_MENU, type RobotCorner } from "@/lib/content";
+import { goTo, onRobotWord, robotHover, robotPoke, robotScreen, robotWord, useRobot, type RobotWord } from "@/lib/robot";
 import { sfx } from "./sfx";
 import { burst } from "../confetti";
 
@@ -208,14 +208,28 @@ function Balloon() {
   );
 }
 
-/** Invisible button over the companion robot. */
+const pick = <T,>(list: readonly T[]) => list[Math.floor(Math.random() * list.length)];
+
+/** After this many clicks in a row (counting the first), it gets angry. */
+const ANGRY_AT = 1 + ROBOT_CLICKS.streak.length + 1;
+
+/**
+ * Invisible button over the robot. Hovering takes it apart into particles on
+ * the landing page (RobotFx) and gets a happy face; clicking, anywhere on the
+ * site, is a little game:
+ *   - a first click makes it vanish into particles and pop back with a jump,
+ *     and opens the "where to?" menu;
+ *   - each further click in a row gets its own new line (ROBOT_CLICKS), a
+ *     word floating up from where you clicked, and particles knocked off
+ *     right there;
+ *   - after the "stop"s it gets angry, red-hot with its brows down, until it
+ *     has been left alone for a few seconds.
+ */
 function HitArea() {
   const hidden = useRobot((s) => s.hidden);
   const ref = useRef<HTMLButtonElement>(null);
   const lastHappy = useRef(0);
-  // Easter egg: five quick clicks and it spins itself dizzy.
-  const clicks = useRef<number[]>([]);
-  const dizzyUntil = useRef(0);
+  const streak = useRef({ n: 0, last: 0, angry: false, angryLine: 0, calm: 0 });
   useEffect(() => {
     let raf = 0;
     const loop = () => {
@@ -227,8 +241,62 @@ function HitArea() {
       el.style.transform = `translate3d(${robotScreen.left}px, ${robotScreen.top + robotScreen.height * 0.05}px, 0)`;
     };
     loop();
-    return () => cancelAnimationFrame(raf);
+    const st = streak.current;
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(st.calm);
+    };
   }, []);
+
+  const onClick = (e: React.MouseEvent) => {
+    sfx.pop();
+    const now = performance.now();
+    const st = streak.current;
+    const robot = useRobot.getState();
+    // Keyboard presses have no position: use the middle of the robot.
+    const x = e.detail === 0 ? robotScreen.left + robotScreen.width / 2 : e.clientX;
+    const y = e.detail === 0 ? robotScreen.top + robotScreen.height * 0.4 : e.clientY;
+    if (!st.angry && now - st.last > 4000) st.n = 0;
+    st.last = now;
+    st.n += 1;
+    const poke = (kind: typeof robotPoke.kind) => Object.assign(robotPoke, { at: now, x, y, kind });
+
+    if (st.n === 1) {
+      poke("teleport");
+      robotWord({ text: pick(ROBOT_CLICKS.words), x, y, tone: "play" });
+      robot.say(pick(ROBOT_CLICKS.menu), {
+        mood: "happy",
+        chips: [...ROBOT_MENU.stops, { label: "Hide the robot", href: "#hide" }],
+        kind: "menu",
+      });
+    } else if (st.n < ANGRY_AT) {
+      const step = ROBOT_CLICKS.streak[st.n - 2];
+      poke("poke");
+      robotWord({ text: step.word, x, y, tone: st.n >= 5 ? "stop" : "play" });
+      if (step.mood === "dizzy") burst(x, y, 40);
+      robot.say(step.line, { mood: step.mood });
+    } else {
+      poke("angry");
+      robotWord({ text: pick(ROBOT_CLICKS.angryWords), x, y, tone: "angry" });
+      robotWord({ text: "💢", x: robotScreen.headX + (Math.random() - 0.5) * 40, y: robotScreen.headY - 30, tone: "angry" });
+      if (!st.angry) {
+        st.angry = true;
+        robot.say(ROBOT_CLICKS.angryStart, { mood: "angry" });
+      } else {
+        robot.say(ROBOT_CLICKS.angry[st.angryLine++ % ROBOT_CLICKS.angry.length], { mood: "angry" });
+      }
+    }
+
+    // Left alone for a few seconds, it calms down.
+    clearTimeout(st.calm);
+    st.calm = window.setTimeout(() => {
+      if (!st.angry) return;
+      st.angry = false;
+      st.n = 0;
+      useRobot.getState().say(pick(ROBOT_CLICKS.calm), { mood: "happy" });
+    }, 6000);
+  };
+
   return (
     <button
       ref={ref}
@@ -236,15 +304,13 @@ function HitArea() {
       className="robot-hit"
       hidden={hidden}
       aria-label="Ask the robot where to go"
-      // Hovering takes the robot apart into particles (RobotFx, on the
-      // landing page) and gets a happy face, at most once every couple of
-      // seconds; a tap does the same on touch screens.
       onPointerEnter={(e) => {
         robotHover.on = true;
         robotHover.x = e.clientX;
         robotHover.y = e.clientY;
         const now = performance.now();
-        if (now - lastHappy.current > 2200) {
+        // A happy face on arrival, but not while it is sulking.
+        if (now - lastHappy.current > 2200 && useRobot.getState().mood !== "angry") {
           lastHappy.current = now;
           useRobot.getState().react("happy");
         }
@@ -256,29 +322,35 @@ function HitArea() {
       onPointerLeave={() => {
         robotHover.on = false;
       }}
-      onPointerDown={(e) => {
-        if (e.pointerType !== "mouse") robotTap.at = performance.now();
-      }}
-      onClick={(e) => {
-        sfx.pop();
-        const now = performance.now();
-        if (now < dizzyUntil.current) return;
-        clicks.current = [...clicks.current.filter((t) => now - t < 2000), now];
-        if (clicks.current.length >= 5) {
-          dizzyUntil.current = now + 2600;
-          clicks.current = [];
-          burst(e.clientX, e.clientY, 50);
-          useRobot.getState().say(EASTER_EGGS.dizzy, { mood: "dizzy" });
-          return;
-        }
-        useRobot.getState().say(ROBOT_MENU.prompt, {
-          mood: "happy",
-          chips: [...ROBOT_MENU.stops, { label: "Hide the robot", href: "#hide" }],
-          kind: "menu",
-        });
-      }}
+      onClick={onClick}
     />
   );
+}
+
+/**
+ * The words a click knocks out of the robot ("boop", "stop!", "grr"), each
+ * floating up from where it was clicked and fading.
+ */
+function ClickWords() {
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(
+    () =>
+      onRobotWord((w: RobotWord) => {
+        const el = box.current;
+        if (!el) return;
+        const span = document.createElement("span");
+        span.className = `clickword clickword--${w.tone}`;
+        span.textContent = w.text;
+        span.style.left = `${w.x}px`;
+        span.style.top = `${w.y}px`;
+        span.style.setProperty("--dx", `${Math.round((Math.random() - 0.5) * 90)}px`);
+        span.style.setProperty("--r", `${Math.round((Math.random() - 0.5) * 26)}deg`);
+        span.addEventListener("animationend", () => span.remove());
+        el.appendChild(span);
+      }),
+    []
+  );
+  return <div ref={box} className="clickwords" aria-hidden="true" />;
 }
 
 /**
@@ -368,15 +440,24 @@ function Director() {
       );
     };
 
-    // Phones keep the robot in one corner: on short sections a leap per
-    // section reads as jitter, not a tour.
-    const cornerOf = (line: (typeof ROBOT_LINES)[string]) => (window.innerWidth < 810 ? "br" : line.corner);
+    // Where it goes next: any of the four corners, at random, so you can't
+    // tell where it will turn up; now and then it stays put and just talks.
+    // Phones keep it in one corner: on short sections a leap per section
+    // reads as jitter, not a tour.
+    const CORNERS: RobotCorner[] = ["tl", "tr", "bl", "br"];
+    const nextCorner = (): RobotCorner => {
+      const from = useRobot.getState().corner;
+      if (window.innerWidth < 810) return "br";
+      if (Math.random() < 0.2) return from;
+      const options = CORNERS.filter((c) => c !== from);
+      return options[Math.floor(Math.random() * options.length)];
+    };
 
     const visit = (key: string) => {
       const line = ROBOT_LINES[key];
       if (!line) return;
       const st = useRobot.getState();
-      const corner = cornerOf(line);
+      const corner = nextCorner();
       const moving = corner !== st.corner;
       st.hush();
       if (moving) st.setCorner(corner);
@@ -397,8 +478,7 @@ function Director() {
           // Pick the first section's corner before switching, so the robot
           // makes one move off the landing page, not two.
           const key = sectionAtCentre() || "signals";
-          const line = ROBOT_LINES[key];
-          if (line) st.setCorner(cornerOf(line));
+          st.setCorner(nextCorner());
           st.setMode("companion");
           present(key, true);
         } else {
@@ -505,6 +585,7 @@ export default function RobotLayer() {
         ) : null}
       </div>
       <HitArea />
+      <ClickWords />
       <SleepZ />
       <Balloon />
       <RestoreButton />

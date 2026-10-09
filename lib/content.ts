@@ -785,6 +785,7 @@ export const LANDING = {
   intro: [
     { text: "Hi! I'm Ujesh's robot.", mood: "wave" },
     { text: "He's off shipping something, so I'm giving the tour today." },
+    { text: "Psst: hover over me, I'm made of particles. Or click. I don't bite." },
     {
       text: "Scroll with me, or jump straight to a chapter:",
       chips: [
@@ -1300,7 +1301,7 @@ export const LEADERSHIP_INTRO = {
   title: "Running the room, not just sitting in it.",
   text: "A code club that runs like a small company, a tech fest with a thousand applicants, and hackathons organised almost as often as entered.",
   photos: [
-    { src: "/media/life-classroom", alt: "Ujesh running a session for a classroom of students" },
+    { src: "/media/life-talk", alt: "Ujesh speaking into a microphone, his sticker-covered laptop beside him" },
     { src: "/media/life-group", alt: "A big group photo on a staircase after an event" },
   ],
 };
@@ -1498,6 +1499,11 @@ export const RESEARCH_INTRO = {
   eyebrow: "Research",
   title: "Papers, a book chapter and work in progress.",
   text: "Most of my research asks one question: how much training can you squeeze out of the GPUs people already own?",
+  photo: {
+    src: "/media/life-classroom",
+    alt: "Ujesh at the podium presenting model-training results to a room",
+    caption: "Presenting training results",
+  },
 };
 
 export const RESEARCH: Paper[] = [
@@ -1622,35 +1628,32 @@ export const FOOTER = {
   ],
 };
 
-/**
- * What the robot says as each section scrolls into view. `corner` is where
- * it lands on screen; `mood` picks the face and the move it makes.
- */
-export type RobotMood = "wave" | "happy" | "think" | "cheer" | "peek" | "dizzy" | "sleep";
-/** Where the companion sits: one of the four corners, set per section. */
+/** The robot's face and move for a line. */
+export type RobotMood = "wave" | "happy" | "think" | "cheer" | "peek" | "dizzy" | "sleep" | "angry";
+/** Where the companion sits: one of the four corners. */
 export type RobotCorner = "br" | "bl" | "tr" | "tl";
 
 /**
- * What the robot says as each section reaches the middle of the screen, and
- * where it stands while it says it. It rests in the bottom corners, clear of
- * every heading, alternating sides so it travels (over the top) as you read.
+ * What the robot says as each section reaches the middle of the screen. Where
+ * it says it is up to the robot: a corner picked at random each time (see the
+ * Director in RobotLayer).
  */
-export const ROBOT_LINES: Record<string, { line: string; mood?: RobotMood; corner: RobotCorner }> = {
-  signals: { line: "I'll follow you down. Click me any time for shortcuts.", mood: "wave", corner: "br" },
-  story: { line: "The short version: eight chapters, all true.", corner: "bl" },
-  build: { line: "Here's what he builds. Keep scrolling, the cards fly past.", corner: "br" },
-  work: { line: "The projects! Filter them: hackathon, research or side project.", corner: "bl" },
-  internships: { line: "Three internships. Real users, real deadlines.", corner: "br" },
-  freelance: { line: "Client work: real sites for real clients.", corner: "bl" },
-  about: { line: "That's him on stage. He talks faster than I compute.", corner: "br" },
-  leadership: { line: "He runs a club of 200. I run on batteries.", corner: "bl" },
-  wins: { line: "Seven wins out of fifty-plus hackathons. I counted twice.", mood: "cheer", corner: "br" },
-  wall: { line: "The photo wall! Hover a picture, it ripples.", corner: "bl" },
-  research: { line: "GradMesh goes to IMPACT-2027 this January.", corner: "br" },
-  feed: { line: "For the day-to-day, these are his profiles.", corner: "bl" },
-  offclock: { line: "Marathons and football. I mostly hover.", corner: "br" },
-  faq: { line: "Short on time? The quick answers are here.", corner: "bl" },
-  contact: { line: "That's the tour! His inbox is right here.", mood: "wave", corner: "br" },
+export const ROBOT_LINES: Record<string, { line: string; mood?: RobotMood }> = {
+  signals: { line: "I'll follow you down. Click me any time for shortcuts.", mood: "wave" },
+  story: { line: "The short version: eight chapters, all true." },
+  build: { line: "Here's what he builds. Keep scrolling, the cards fly past." },
+  work: { line: "The projects! Filter them: hackathon, research or side project." },
+  internships: { line: "Three internships. Real users, real deadlines." },
+  freelance: { line: "Client work: real sites for real clients." },
+  about: { line: "That's him on stage. He talks faster than I compute." },
+  leadership: { line: "He runs a club of 200. I run on batteries." },
+  wins: { line: "Seven wins out of fifty-plus hackathons. I counted twice.", mood: "cheer" },
+  wall: { line: "The photo wall! Hover a picture, it ripples." },
+  research: { line: "GradMesh goes to IMPACT-2027 this January." },
+  feed: { line: "For the day-to-day, these are his profiles." },
+  offclock: { line: "Marathons and football. I mostly hover." },
+  faq: { line: "Short on time? The quick answers are here." },
+  contact: { line: "That's the tour! His inbox is right here.", mood: "wave" },
 }
 
 export const ROBOT_IDLE_LINES = [
@@ -1664,7 +1667,6 @@ export const ROBOT_IDLE_LINES = [
 export const EASTER_EGGS = {
   cheatCode: "Cheat code accepted. Infinite curiosity unlocked.",
   name: "Hey, that's my human!",
-  dizzy: "Whoa. Okay, okay, I'm dizzy.",
   wake: "Oh! You're back.",
   console: [
     "Hey, you opened the console. You're my kind of visitor.",
@@ -1672,6 +1674,41 @@ export const EASTER_EGGS = {
     "Built by Ujesh Kumar Yadav. Say hi: ujeshyadav20k5@gmail.com",
     "Psst: try the classic cheat code. ↑ ↑ ↓ ↓ ← → ← → B A",
   ],
+};
+
+/**
+ * Clicking the robot. The first click (after a quiet spell) makes it vanish
+ * into particles and pop back with a jump, and opens the menu. Every further
+ * click in a row gets a new line, in this order, each less amused than the
+ * last; after the "stop"s it gets angry: red-hot, eyebrows down, and clicks
+ * just knock particles off where they land. A few seconds' peace and it
+ * calms down again.
+ */
+export const ROBOT_CLICKS = {
+  menu: ["Boop! Where to?", "You rang? Pick a stop:", "Beep boop. Where shall we go?", "Hi again! Where to?"],
+  streak: [
+    { line: "Hey! That tickles.", mood: "happy", word: "boop" },
+    { line: "Hehe. Again?", mood: "happy", word: "click" },
+    { line: "Whoa. Now I'm dizzy.", mood: "dizzy", word: "wheee" },
+    { line: "Okay, stop.", mood: "think", word: "hey!" },
+    { line: "Stop. Please.", word: "stop" },
+    { line: "I mean it. Stop.", word: "stop!" },
+    { line: "STOP!", word: "STOP" },
+  ] as { line: string; mood?: RobotMood; word: string }[],
+  angryStart: "That's it. I'm angry now.",
+  angry: [
+    "Grrr.",
+    "Not. Funny.",
+    "I'm telling Ujesh.",
+    "My circuits are boiling.",
+    "One more click. I dare you.",
+    "I have a laser. Probably.",
+    "You're going on my list.",
+    "That's actual steam, you know.",
+  ],
+  calm: ["…Fine. Friends again?", "Okay. I've cooled down.", "Deep breath. We're good."],
+  words: ["click", "boop", "beep", "tap", "bonk", "clack"],
+  angryWords: ["grr", "hmph", "argh", "!!", "💢"],
 };
 
 export const ROBOT_MENU = {

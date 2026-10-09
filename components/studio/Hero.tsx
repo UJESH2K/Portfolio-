@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { HERO, LANDING, type BalloonBeat } from "@/lib/content";
-import { goTo, useRobot } from "@/lib/robot";
+import { goTo, robotPoke, useRobot } from "@/lib/robot";
 import CursorTrail from "./CursorTrail";
 
 /**
  * The landing page: warm white paper, the headline typing out on the left,
  * and the robot (drawn by the fixed RobotLayer) standing on the right. The
- * robot opens with three speech-bubble beats; the last holds chapter chips.
+ * robot opens with a few speech-bubble beats; the last holds chapter chips.
  */
 export default function Hero() {
   const introDone = useRobot((s) => s.introDone);
@@ -20,10 +20,13 @@ export default function Hero() {
 
   const runBeats = (beats: BalloonBeat[], gap = 2900) => {
     timers.current.forEach(clearTimeout);
+    const started = performance.now();
     timers.current = beats.map((b, i) =>
       window.setTimeout(() => {
         const st = useRobot.getState();
-        if (st.mode !== "hero") return;
+        // Once the visitor has clicked the robot, it is talking to them; the
+        // rest of the scripted intro steps aside.
+        if (st.mode !== "hero" || robotPoke.at > started) return;
         st.say(b.text, { mood: b.mood, chips: b.chips, kind: b.chips ? "menu" : "line" });
       }, i * gap)
     );

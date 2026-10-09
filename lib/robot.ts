@@ -106,9 +106,31 @@ export const robotScreen = {
  */
 export const robotHover = { on: false, x: 0, y: 0 };
 
-/** Last tap on the robot from a touch screen (performance.now()), which
- *  shatters it into particles once; mice get the hover effect instead. */
-export const robotTap = { at: 0 };
+/**
+ * The latest click on the robot, for the scene's particle effects: `at` is
+ * performance.now(), x/y are client pixels. "teleport" takes the robot apart
+ * and brings it back with a jump; "poke" and "angry" burst it open just where
+ * it was clicked.
+ */
+export const robotPoke: { at: number; x: number; y: number; kind: "teleport" | "poke" | "angry" } = {
+  at: 0,
+  x: 0,
+  y: 0,
+  kind: "poke",
+};
+
+/** Words that float up from the robot when it is clicked ("boop", "stop!"). */
+export type RobotWord = { text: string; x: number; y: number; tone: "play" | "stop" | "angry" };
+const wordListeners = new Set<(w: RobotWord) => void>();
+export function robotWord(w: RobotWord) {
+  wordListeners.forEach((fn) => fn(w));
+}
+export function onRobotWord(fn: (w: RobotWord) => void) {
+  wordListeners.add(fn);
+  return () => {
+    wordListeners.delete(fn);
+  };
+}
 
 /** Smooth-scroll to an in-page anchor through Lenis when it is running. */
 export function goTo(href: string) {

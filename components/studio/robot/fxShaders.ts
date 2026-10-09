@@ -11,7 +11,12 @@
  * The mesh and the particles evaluate the same mask: where the mesh discards
  * a fragment, the particles sampled from that patch of surface show instead,
  * so the robot reads as turning into particles rather than as particles
- * appearing in front of it.
+ * appearing in front of it. The mask has three parts:
+ *   - the cut: a hole around the pointer's ray, wider the faster it moves;
+ *   - patches: flakes all over the body that come away while the robot is
+ *     touched, more of them the more it is stirred, until none are left;
+ *   - the ring: a ripple that sweeps out from the pointer when it arrives or
+ *     clicks, breaking the robot into particles as it passes.
  */
 
 /** The colours inside the robot: jewel tones that stay rich on a white page
@@ -34,6 +39,10 @@ uniform vec3 uRayD;
 uniform float uCut;
 uniform float uUnit;
 uniform float uClock;
+uniform float uGlobal;
+uniform float uWave;
+uniform float uWaveW;
+uniform float uAngry;
 
 float fxHash(vec3 p) {
   p = fract(p * 0.1031);
@@ -60,14 +69,38 @@ float fxRayDist(vec3 p) {
   return length(v - uRayD * dot(v, uRayD));
 }
 
-/** 0 = solid, 1 = dissolved. The edge is broken up by two octaves of noise
- *  scaled to the size of the cut, so it frays like burning paper. */
+/** Flakes all over the body: every place has its own threshold, so as
+ *  uGlobal rises the robot comes apart in scattered patches rather than from
+ *  one point. The field drifts slowly, so flakes come and go while it is
+ *  held. 0 = solid, 1 = gone. */
+float fxPatchMask(vec3 p) {
+  if (uGlobal <= 0.0) return 0.0;
+  vec3 q = p / uUnit + vec3(0.0, uClock * 0.06, 0.0);
+  float cell = fxNoise(q * 10.0 + 17.3) * 0.72 + fxNoise(q * 27.0 + 3.1) * 0.28;
+  float t = mix(0.14, 0.92, uGlobal);
+  return 1.0 - smoothstep(t - 0.035, t + 0.035, cell);
+}
+
+/** The ripple sweeping out from the pointer; n frays its edges. */
+float fxRingMask(vec3 p, float n) {
+  if (uWave <= 0.0) return 0.0;
+  float d = fxRayDist(p) + (n - 0.5) * uWaveW * 1.4;
+  return 1.0 - smoothstep(uWaveW * 0.35, uWaveW, abs(d - uWave));
+}
+
+/** 0 = solid, 1 = dissolved: the cut, the patches and the ring together.
+ *  The cut's edge is broken up by two octaves of noise scaled to its size,
+ *  so it frays like burning paper. */
 float fxMask(vec3 p) {
-  if (uCut <= 0.0) return 0.0;
+  float m = fxPatchMask(p);
+  if (uCut <= 0.0 && uWave <= 0.0) return m;
   float n = fxNoise(p * (7.0 / uUnit) + vec3(0.0, uClock * 0.35, 0.0)) * 0.62
           + fxNoise(p * (19.0 / uUnit) - vec3(uClock * 0.2)) * 0.38;
-  float d = fxRayDist(p) + (n - 0.5) * min(uCut, uUnit * 0.3) * 0.9;
-  return 1.0 - smoothstep(uCut * 0.8, uCut, d);
+  if (uCut > 0.0) {
+    float d = fxRayDist(p) + (n - 0.5) * min(uCut, uUnit * 0.3) * 0.9;
+    m = max(m, 1.0 - smoothstep(uCut * 0.8, uCut, d));
+  }
+  return max(m, fxRingMask(p, n));
 }
 
 /** Thin-film colour: the pearly cyan-violet-gold of a soap bubble. Used
@@ -167,8 +200,17 @@ void main() {
   float region = (1.0 - smoothstep(uRadius * 0.3, uRadius, rd)) * uActive;
   vec3 acc = dir * uStrength * (0.45 + 1.1 * seed) * (0.12 + 1.88 * uEnergy) * region;
 
-  // Arriving on the robot breaks a patch open once.
+  // Arriving on (or clicking) the robot breaks a patch open once.
   acc += dir * uStrength * uBurst * (0.7 + 0.9 * seed) * (1.0 - smoothstep(0.0, uRadius * 1.5, rd));
+
+  // Flakes: particles under a patch that has come away drift off the body
+  // like ash, a little way out and up, and settle back as it heals.
+  float patchM = fxPatchMask(anchor);
+  vec3 lift = normalize(nrm * 0.9 + vec3(0.0, 0.55, 0.0) + (rnd - 0.5) * 0.7 - uRayD * 0.2);
+  acc += lift * uStrength * 0.38 * patchM * (1.0 - smoothstep(0.35, 0.7, excite));
+
+  // The ripple throws what it passes outward.
+  acc += normalize(radial + nrm * 0.6 - uRayD * 0.3) * uStrength * 0.55 * fxRingMask(anchor, 0.5);
 
   // Blast: sustained fast hovering takes the whole body apart, outward from
   // its centre and swirling round it, so the cloud keeps a ghost of the
@@ -235,6 +277,7 @@ uniform float uActive;
 uniform float uInnerR;
 uniform float uTime;
 uniform float uBlastV;
+uniform float uKeep;
 
 varying vec3 vColor;
 varying float vAlpha;
@@ -253,13 +296,18 @@ void main() {
   float excite = clamp(length(offset) / max(uScatter, 1e-4), 0.0, 1.0);
   float rush = clamp(speed / (uUnit * 0.9), 0.0, 1.0);
 
-  // Shown where the mesh has dissolved, and wherever a particle is still
-  // away from home; hidden (zero size) everywhere else.
-  float vis = max(fxMask(anchor), smoothstep(0.02, 0.16, excite));
+  // Shown where the body has come apart, and wherever a particle is well
+  // clear of it; a mote just off an intact patch stays hidden, so the robot
+  // never looks like a fuzz of dots over itself. On a small robot only a
+  // share of the cloud is drawn, so a burst reads as specks, not a blur.
+  float mask = fxMask(anchor);
+  float vis = max(mask, smoothstep(0.28, 0.5, excite)) * step(fract(seed * 7.77), uKeep);
   vec4 mv = viewMatrix * vec4(anchor + offset, 1.0);
   gl_Position = projectionMatrix * mv;
 
-  float fly = step(seed, ${BUTTERFLY_SHARE}) * smoothstep(0.25, 0.55, excite);
+  // Butterflies only once they are properly free, not while a flake hovers
+  // just off the body.
+  float fly = step(seed, ${BUTTERFLY_SHARE}) * smoothstep(0.55, 0.8, excite);
   vFly = fly;
   vFlap = 0.24 + 0.76 * abs(sin(uTime * (7.0 + seed * 400.0) + seed * 40.0));
   vAng = (fract(seed * 91.7) - 0.5) * 0.9 + sin(uTime * 1.3 + seed * 300.0) * 0.25;
@@ -285,10 +333,12 @@ void main() {
   float inner = (1.0 - smoothstep(0.0, uInnerR, fxRayDist(anchor))) * uActive;
   float hue = seed * 0.85 + uClock * 0.06 + excite * 0.3 + dot(anchor, vec3(0.31, 0.53, 0.17)) / uUnit * 0.5;
   vec3 jewel = fxJewel(hue);
-  float shift = clamp(excite * 1.4 + inner * 0.55 + rush * 0.6, 0.0, 1.0);
+  float shift = clamp(excite * 1.4 + inner * 0.55 + rush * 0.6 + mask * 0.35, 0.0, 1.0);
   vColor = mix(base, jewel, shift * 0.9);
   vGlow = clamp(rush * 0.8 + inner * inner * 0.7, 0.0, 1.0);
   vColor += jewel * vGlow * vGlow * 0.5;
+  // Angry: embers instead of jewels.
+  vColor = mix(vColor, pow(vec3(1.0, 0.3, 0.1), vec3(2.2)) * (0.55 + 0.7 * diffuse), uAngry * 0.85);
   // Butterflies: blue-morpho iridescence, each a little to the teal or violet.
   vHue = 0.12 + fract(seed * 13.7) * 0.4;
 }
@@ -377,7 +427,19 @@ export const MESH_FRAGMENT_COLOUR = /* glsl */ `
   float fxInner = (1.0 - smoothstep(0.0, uInnerR, fxRayDist(vFxWorld))) * uActive;
   vec3 fxGem = fxJewel(fxT * 0.6 + uClock * 0.05);
   gl_FragColor.rgb = mix(gl_FragColor.rgb, gl_FragColor.rgb * 0.45 + fxGem * 1.1, fxInner * fxInner * 0.8);
+  // While it is touched the whole body shimmers like a hologram: bands of
+  // colour climbing it, so the change reads across the robot, not just
+  // under the pointer.
+  float fxScan = pow(0.5 + 0.5 * sin(vFxWorld.y * (90.0 / uUnit) - uClock * 7.0), 6.0);
+  gl_FragColor.rgb += fxJewel(fxT + 0.15) * (0.06 + 0.22 * fxScan) * uActive;
   float fxRim = smoothstep(0.1, 0.5, fxDis);
   gl_FragColor.rgb = mix(gl_FragColor.rgb, fxJewel(fxT + 0.3) * 1.6 + 0.15, fxRim);
+  // Angry: red-hot, pulsing as if it is boiling.
+  if (uAngry > 0.001) {
+    float fxL = dot(gl_FragColor.rgb, vec3(0.299, 0.587, 0.114));
+    float fxBoil = 0.85 + 0.15 * sin(uClock * 9.0 + vFxWorld.y * (14.0 / uUnit));
+    vec3 fxHot = vec3(fxL * 1.75 + 0.06, fxL * 0.38 + 0.01, fxL * 0.24) * fxBoil;
+    gl_FragColor.rgb = mix(gl_FragColor.rgb, fxHot, uAngry * 0.8);
+  }
 }
 `;

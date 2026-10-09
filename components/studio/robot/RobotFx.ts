@@ -3,18 +3,21 @@ import { GPUComputationRenderer } from "three/examples/jsm/misc/GPUComputationRe
 import { OFFSET_SHADER, POINTS_FRAGMENT, POINTS_VERTEX, VELOCITY_SHADER } from "./fxShaders";
 
 /**
- * The landing robot's hover effect: it comes apart into particles where the
- * pointer touches it and puts itself back together.
+ * The robot's particle effects: it comes apart into particles and puts
+ * itself back together.
  *
  *   - Particles are sampled across the robot's surface and pinned to its
  *     bones, so the cloud follows the animation exactly.
- *   - Under the pointer the mesh dissolves with a frayed, glowing rim and the
- *     particles from that patch are thrown out, some of them as butterflies,
- *     coloured from a thin-film spectrum: the colours "inside" the robot.
- *   - The faster the pointer moves, the more comes apart; sustained fast
- *     hovering takes the whole robot apart. When the pointer slows or
- *     leaves, a spring brings every particle back to its own spot and the
- *     mesh heals behind them.
+ *   - Hover (landing page only): a ripple sweeps the body as the pointer
+ *     arrives; while it stays, flakes come away all over and the patch under
+ *     the pointer opens up; ordinary movement takes the whole robot apart
+ *     within a second or so. Thrown particles are coloured from the jewel
+ *     spectrum "inside" the robot, a few of them as butterflies.
+ *   - Clicks (everywhere): `poke()` either takes the whole robot apart for a
+ *     moment (it reappears with a jump, see RobotScene) or bursts it open
+ *     just where it was clicked.
+ *   - When the pointer slows or leaves, a spring brings every particle back
+ *     to its own spot and the mesh heals behind them.
  *   - A GPU simulation (two ping-ponged float textures) does the physics;
  *     when nothing is happening it stops and the particles are not drawn,
  *     so at rest the effect costs nothing.
@@ -36,6 +39,13 @@ export function createFxUniforms() {
     uActive: { value: 0 },
     uInnerR: { value: 0.3 },
     uPearl: { value: 1 },
+    /** Whole-body break-up into flakes, 0..1. */
+    uGlobal: { value: 0 },
+    /** The ripple's radius around the pointer's ray (0 = none), and width. */
+    uWave: { value: 0 },
+    uWaveW: { value: 0.1 },
+    /** 0..1: red-hot. Driven by the robot's mood (RobotScene). */
+    uAngry: { value: 0 },
   };
 }
 
@@ -249,19 +259,28 @@ function dataTexture(size: number, src: Float32Array) {
 }
 
 export type FxInput = {
-  /** Effect allowed (the robot is on the landing page and motion is OK). */
-  enabled: boolean;
+  /** Hover effect allowed: the robot is on the landing page. */
+  hoverEnabled: boolean;
   /** Pointer over the robot's hit area. */
   hover: boolean;
-  /** A tap on touch screens: shatter once. */
-  tap: boolean;
   /** Robot height and centre, world units. */
   unit: number;
   center: THREE.Vector3;
+  /** Robot height on screen, device pixels (keeps motes visible when small). */
+  heightPx: number;
+  /** 0..1, how angry it is: an angry robot only bursts where it is clicked. */
+  angry: number;
   camera: THREE.Camera;
 };
 
-const FULL_SPEED = 2.4;
+/** What a click does: vanish and come back, or burst open where clicked. */
+export type PokeKind = "teleport" | "poke" | "angry";
+
+/** Pointer speed, in screen widths per second, that counts as full energy:
+ *  an ordinary sweep across the robot, not a frantic scrub. */
+const FULL_SPEED = 1.2;
+/** How long the ripple takes to cross the robot, in seconds. */
+const WAVE_TIME = 0.85;
 
 export class RobotFx {
   readonly points: THREE.Points;
@@ -275,7 +294,31 @@ export class RobotFx {
   private ray = new THREE.Raycaster();
   private ndc = new THREE.Vector2();
   private ptr = { x: 0, y: 0, px: 0, py: 0, moved: false, dx: 0, dy: 0, speed: 0, inside: false };
-  private state = { active: 0, energy: 0, burst: 0, blast: 0, cut: 0, quiet: 0, running: false, hoverWas: false, time: 0 };
+  private state = {
+    active: 0,
+    energy: 0,
+    burst: 0,
+    blast: 0,
+    cut: 0,
+    quiet: 0,
+    running: false,
+    hoverWas: false,
+    time: 0,
+    /** Whole-body flaking, smoothed. */
+    global: 0,
+    /** A click's local hole, decaying. */
+    poke: 0,
+    /** Seconds since the ripple started; < 0 when there is none. */
+    wave: -1,
+    /** Taken apart by a click: comes back on its own schedule. */
+    teleport: false,
+    /** Seconds left in which pointer movement doesn't count (after a click:
+     *  the pointer jumping between clicks is not a scrub). */
+    hold: 0,
+    /** Seconds the pointer has been on the robot this time. */
+    since: 0,
+  };
+  private pending: { kind: PokeKind; x: number; y: number } | null = null;
   private onMove: (e: PointerEvent) => void;
   private v = { right: new THREE.Vector3(), up: new THREE.Vector3(), fwd: new THREE.Vector3(), drag: new THREE.Vector3() };
   /** Tilt toward the pointer while it is on the robot, for the rig. */
@@ -375,6 +418,7 @@ export class RobotFx {
         uScatter: { value: 0.3 },
         uTime: { value: 0 },
         uBlastV: { value: 0 },
+        uKeep: { value: 1 },
       },
       transparent: true,
       depthWrite: true,
@@ -411,6 +455,11 @@ export class RobotFx {
   }
 
   private warm = 0;
+
+  /** A click at (x, y), client pixels. Handled on the next update. */
+  poke(kind: PokeKind, x: number, y: number) {
+    this.pending = { kind, x, y };
+  }
 
   /** Copy the bones' world matrices into the texture both passes read. */
   private writeBones() {
@@ -455,31 +504,74 @@ export class RobotFx {
       ptr.speed *= 0.82;
     }
 
-    const hover = input.enabled && input.hover;
-    if (hover && !s.hoverWas && s.active < 0.35) s.burst = 1;
-    if (input.enabled && input.tap) {
+    // Clicks: the ray goes through the click; either take the whole robot
+    // apart for a moment, or burst it open just there.
+    const poke = this.pending;
+    if (poke) {
+      this.pending = null;
+      ptr.x = ptr.px = poke.x;
+      ptr.y = ptr.py = poke.y;
+      ptr.speed = 0;
+      s.hold = 1;
       s.burst = 1;
-      s.blast = 1;
+      s.wave = 0;
+      if (poke.kind === "teleport") {
+        s.blast = 1;
+        s.teleport = true;
+      } else s.poke = poke.kind === "angry" ? 1.35 : 1;
     }
+
+    const hover = input.hoverEnabled && input.hover;
+    // Arriving: a ripple sweeps the body and a patch breaks open once.
+    if (hover && !s.hoverWas && s.active < 0.35) {
+      s.burst = Math.max(s.burst, 0.45);
+      s.wave = 0;
+    }
+    s.hold = Math.max(0, s.hold - dt);
+    s.since = hover ? s.since + dt : 0;
+    // Movement counts once the pointer has settled on the robot: the swoop
+    // that brings it there is not a scrub.
+    const calm = s.hold === 0 && input.angry < 0.3 && s.since > 0.3;
     s.hoverWas = hover;
     s.burst *= Math.exp(-2.6 * dt);
     if (s.burst < 1e-3) s.burst = 0;
-    const eT = hover ? Math.min(1, ptr.speed / FULL_SPEED) : 0;
+    s.poke *= Math.exp(-1.6 * dt);
+    if (s.poke < 0.01) s.poke = 0;
+    const eT = hover && calm ? Math.min(1, ptr.speed / FULL_SPEED) : 0;
     s.energy = THREE.MathUtils.damp(s.energy, eT, eT > s.energy ? 11 : 3.2, dt);
     s.active = THREE.MathUtils.damp(s.active, hover ? 1 : 0, hover ? 13 : 4.5, dt);
-    // Sustained fast movement takes the whole robot apart; slowing down or
-    // leaving lets it come back together.
-    const rise = hover && s.energy > 0.42 ? (s.energy - 0.3) * 1.5 : 0;
-    s.blast = THREE.MathUtils.clamp(s.blast + (rise - (rise > 0 ? 0 : hover ? 0.45 : 0.7)) * dt, 0, 1);
+    if (s.teleport) {
+      // A click's vanish: gone for a beat, then back in about a second.
+      s.blast = Math.max(0, s.blast - 1.5 * dt);
+      if (s.blast === 0) s.teleport = false;
+    } else {
+      // Brisk movement takes the whole robot apart (about a second; a fast
+      // scrub, half that); an ordinary look-around only flakes it. Slowing
+      // down or leaving lets it come back together.
+      const rise = hover && calm && s.energy > 0.45 ? (s.energy - 0.35) * 3.2 : 0;
+      s.blast = THREE.MathUtils.clamp(s.blast + (rise - (rise > 0 ? 0 : hover ? 0.4 : 0.75)) * dt, 0, 1);
+    }
+    // Flakes: some come away just from resting on it, more as it is stirred.
+    const gT = Math.max(hover ? Math.min(0.9, 0.12 + s.energy * 0.5) : 0, s.blast);
+    s.global = THREE.MathUtils.damp(s.global, gT, gT > s.global ? 7 : 2.4, dt);
+    if (s.global < 0.002 && gT === 0) s.global = 0;
+    if (s.wave >= 0) {
+      s.wave += dt;
+      if (s.wave > WAVE_TIME) s.wave = -1;
+    }
 
     const unit = Math.max(input.unit, 1e-3);
     const k = unit / 3.6;
     const radius = 0.62 * k;
-    const cutT = Math.max(radius * s.active * (0.3 + 0.95 * s.energy) + radius * 0.8 * s.burst * s.active, unit * 1.7 * s.blast ** 1.4);
+    const cutT = Math.max(
+      radius * s.active * (0.35 + 1.1 * s.energy) + radius * 0.8 * s.burst * s.active,
+      radius * 1.6 * s.poke,
+      unit * 1.7 * s.blast ** 1.4
+    );
     s.cut = THREE.MathUtils.damp(s.cut, cutT, cutT > s.cut ? 9 : 2.2, dt);
     if (s.cut < radius * 0.02 && cutT === 0) s.cut = 0;
 
-    const busy = s.active > 0.01 || s.blast > 0.001 || s.burst > 0 || s.cut > 0;
+    const busy = s.active > 0.01 || s.blast > 0.001 || s.burst > 0 || s.cut > 0 || s.global > 0 || s.wave >= 0 || s.poke > 0;
     s.quiet = busy ? 0 : s.quiet + dt;
     // Keep simulating for a few seconds after the last touch so everything
     // can fly home, then stop for good until the next one.
@@ -491,8 +583,11 @@ export class RobotFx {
     u.uCut.value = s.cut;
     u.uUnit.value = unit;
     u.uInnerR.value = radius * 1.8;
+    u.uGlobal.value = s.global;
+    const wt = s.wave >= 0 ? s.wave / WAVE_TIME : -1;
+    u.uWave.value = wt >= 0 ? unit * (0.02 + 1.6 * (1 - (1 - wt) ** 3)) : 0;
+    u.uWaveW.value = unit * 0.07;
     s.time += dt;
-    u.uClock.value = s.time;
 
     if (!run) {
       if (s.running) {
@@ -550,6 +645,10 @@ export class RobotFx {
     mu.uTime.value = s.time;
     mu.uBlastV.value = s.blast;
     mu.uViewH.value = viewH * pixelRatio;
+    // Motes about two device pixels wide whatever the robot's size, so the
+    // small corner robot's bursts read too.
+    mu.uSize.value = Math.max(0.0056, 1.8 / Math.max(input.heightPx, 1));
+    mu.uKeep.value = THREE.MathUtils.clamp((input.heightPx / 520) ** 2 * 1.2, 0.16, 1);
     this.points.visible = true;
   }
 

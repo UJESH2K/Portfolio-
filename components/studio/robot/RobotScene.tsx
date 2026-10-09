@@ -6,7 +6,7 @@ import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { gsap } from "gsap";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { robotHover, robotScreen, robotTap, useRobot } from "@/lib/robot";
+import { robotHover, robotPoke, robotScreen, useRobot } from "@/lib/robot";
 import type { RobotMood } from "@/lib/content";
 import { sfx } from "./sfx";
 import { RobotFx, createFxUniforms } from "./RobotFx";
@@ -91,17 +91,22 @@ function targetFor(key: Spot, w: number, h: number) {
 }
 
 /**
- * How the robot travels between spots, by rule rather than at random:
+ * How the robot travels between spots. Each move is one of a few designed
+ * routes, picked at random where more than one fits, so where it leaves and
+ * where it comes back from are hard to guess:
  *   - from or to the landing page: leap off the top, drop in from above;
- *   - same side, other row (e.g. top-left to bottom-left): slide out of the
- *     side edge and back in at the new height;
- *   - other side: leap over the top and drop into the new corner.
+ *   - same side, other row (e.g. top-left to bottom-left): usually slide out
+ *     of the side edge and back in at the new height, sometimes over the top
+ *     or under the bottom;
+ *   - other side: leap over the top, or duck out under the bottom and pop up
+ *     into the new corner.
  */
 function routeFor(from: Spot | null, to: Spot): { out: Edge; in: Edge } {
   if (!from || from === "hero" || to === "hero") return { out: "top", in: "top" };
   const sideOf = (k: Spot): Edge => (k === "br" || k === "tr" ? "right" : "left");
-  if (sideOf(from) === sideOf(to)) return { out: sideOf(from), in: sideOf(to) };
-  return { out: "top", in: "top" };
+  const r = Math.random();
+  if (sideOf(from) === sideOf(to) && r < 0.6) return { out: sideOf(from), in: sideOf(to) };
+  return r < 0.8 ? { out: "top", in: "top" } : { out: "bottom", in: "bottom" };
 }
 
 /**
@@ -151,6 +156,46 @@ function shareSkeleton(root: THREE.Object3D) {
     m.bind(ref, m.bindMatrix);
     sk.dispose();
   }
+}
+
+/**
+ * Angry eyebrows: two dark bars over the eyes, slanted down toward the middle,
+ * parented to the head so they follow every turn. Sized and placed from the
+ * eye bones, so they sit right whatever the model's scale. Hidden until the
+ * robot is angry.
+ */
+function makeBrows(head: THREE.Object3D | null, eyeR: THREE.Object3D | null, eyeL: THREE.Object3D | null) {
+  if (!head || !eyeR || !eyeL) return null;
+  head.updateWorldMatrix(true, false);
+  const inv = new THREE.Matrix4().copy(head.matrixWorld).invert();
+  const toLocal = new THREE.Matrix3().setFromMatrix4(inv);
+  const pR = eyeR.getWorldPosition(new THREE.Vector3()).applyMatrix4(inv);
+  const pL = eyeL.getWorldPosition(new THREE.Vector3()).applyMatrix4(inv);
+  // The face looks down +z (at the camera), up is +y; in the head's frame:
+  const fwd = new THREE.Vector3(0, 0, 1).applyMatrix3(toLocal).normalize();
+  const up = new THREE.Vector3(0, 1, 0).applyMatrix3(toLocal).normalize();
+  const right = new THREE.Vector3().crossVectors(up, fwd).normalize();
+  const span = pR.distanceTo(pL);
+  if (!(span > 0)) return null;
+  const mid = pR.clone().add(pL).multiplyScalar(0.5);
+  const group = new THREE.Group();
+  const geo = new THREE.BoxGeometry(span * 0.56, span * 0.12, span * 0.03);
+  const mat = new THREE.MeshBasicMaterial({ color: 0x160604 });
+  const basis = new THREE.Matrix4().makeBasis(right, up, fwd);
+  for (const eye of [pR, pL]) {
+    const brow = new THREE.Mesh(geo, mat);
+    brow.quaternion.setFromRotationMatrix(basis);
+    // Slant: the end nearer the middle of the face goes down.
+    const inward = Math.sign(mid.clone().sub(eye).dot(right)) || 1;
+    brow.rotateZ(-inward * 0.42);
+    // Just over the top of the eye, flat against the face screen.
+    brow.position.copy(eye).addScaledVector(up, span * 0.3).addScaledVector(fwd, span * 0.03);
+    brow.frustumCulled = false;
+    group.add(brow);
+  }
+  group.visible = false;
+  head.add(group);
+  return group;
 }
 
 /** How far the landing page has scrolled, capped once it is off screen. */
@@ -222,7 +267,9 @@ ${MESH_FRAGMENT_COLOUR}`);
     shareSkeleton(scene);
     const faceBones: Record<string, THREE.Object3D | null> = {};
     [...Object.values(EYES).flat(), ...Object.values(MOUTHS).flat()].forEach((n) => (faceBones[n] = byName(n)));
-    return { scene, bot, head: byName("Head_M_033"), ground, toys, faceBones, fxU };
+    const head = byName("Head_M_033");
+    const brows = makeBrows(head, faceBones[EYES.open[0]], faceBones[EYES.open[1]]);
+    return { scene, bot, head, ground, toys, faceBones, fxU, brows };
   }, [gltf.scene]);
 
   // The particle half of the hover effect. Fewer particles on phones; none
@@ -248,7 +295,9 @@ ${MESH_FRAGMENT_COLOUR}`);
       setFx(null);
     };
   }, [gl, parts]);
-  const tapSeen = useRef(0);
+  const pokeSeen = useRef(0);
+  // A travel between corners is running (pokes don't hop over it).
+  const traveling = useRef(false);
   const center = useMemo(() => new THREE.Vector3(), []);
 
   const mixer = useMemo(() => new THREE.AnimationMixer(parts.scene), [parts.scene]);
@@ -271,6 +320,9 @@ ${MESH_FRAGMENT_COLOUR}`);
     lookYaw: 0,
     lookPitch: 0,
     shakeUntil: 0,
+    // Angry, smoothed toward its target: red-hot, brows down, trembling.
+    angry: 0,
+    angryT: 0,
     // Lean from scroll speed, so the companion rides along instead of
     // standing frozen while the page moves under it.
     lean: 0,
@@ -358,7 +410,8 @@ ${MESH_FRAGMENT_COLOUR}`);
         return;
       }
 
-      const tl = gsap.timeline();
+      traveling.current = true;
+      const tl = gsap.timeline({ onComplete: () => void (traveling.current = false), onInterrupt: () => void (traveling.current = false) });
       const size = p.h;
 
       // ── Off the screen, by the route for this move ─────────────────
@@ -371,6 +424,11 @@ ${MESH_FRAGMENT_COLOUR}`);
           { y: -size * 0.4, x: p.x + (p.x > w / 2 ? -1 : 1) * size * 0.25, rz: p.x > w / 2 ? 0.35 : -0.35, duration: 0.5, ease: "power2.in" },
           "<"
         );
+      } else if (out === "bottom") {
+        // A little hop, then drop out of sight below the bottom edge.
+        tl.to(p, { hop: 0.2, sq: 1.08, duration: 0.18, ease: "power2.out" })
+          .to(p, { hop: 0, duration: 0.12, ease: "power2.in" })
+          .to(p, { y: h + size * 1.3, rz: p.x > w / 2 ? -0.2 : 0.2, duration: 0.45, ease: "power2.in" }, "<");
       } else {
         const dir = out === "right" ? 1 : -1;
         tl.to(p, { sq: 1.05, ry: dir * 1.1, duration: 0.14 })
@@ -440,8 +498,13 @@ ${MESH_FRAGMENT_COLOUR}`);
     });
 
     const react = (mood: RobotMood) => {
-      const hero = useRobot.getState().mode === "hero";
+      anim.current.angryT = mood === "angry" ? 1 : 0;
       switch (mood) {
+        case "angry":
+          // Glaring: open eyes under the brows, a flat mouth, and a shudder.
+          setFace({ eyes: "open", mouth: "closed" }, 60000);
+          anim.current.shakeUntil = performance.now() + 500;
+          break;
         case "wave":
           // Wave, then back to the calm idle. (The clip's hologram-juggling
           // routine is never used: its head chases toys we don't show.)
@@ -530,6 +593,7 @@ ${MESH_FRAGMENT_COLOUR}`);
     const a = anim.current;
     const now = performance.now();
     const s = useRobot.getState();
+    parts.fxU.uClock.value = state.clock.elapsedTime;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     if (fullCam.aspect !== vw / vh) {
@@ -646,6 +710,15 @@ ${MESH_FRAGMENT_COLOUR}`);
     a.bodyYaw += (bodyT - a.bodyYaw) * (1 - Math.exp(-dt * 4));
     let jitter = 0;
     if (now < a.shakeUntil) jitter = (Math.random() - 0.5) * p.h * 0.02;
+    // Angry: red-hot and trembling, brows down.
+    a.angry += (a.angryT - a.angry) * (1 - Math.exp(-dt * 6));
+    if (a.angry < 0.002) a.angry = 0;
+    parts.fxU.uAngry.value = a.angry;
+    if (a.angry > 0.3) jitter += (Math.random() - 0.5) * p.h * 0.006 * a.angry;
+    if (parts.brows) {
+      parts.brows.visible = a.angry > 0.05;
+      parts.brows.children.forEach((b) => b.scale.set(1, Math.max(0.01, a.angry), 1));
+    }
     g.position.set((p.x + jitter - vw / 2) * wpp, (vh / 2 - yScreen) * wpp + p.hop * p.h * wpp, 0);
     g.scale.set(scale * (2 - p.sq) ** 0.5, scale * p.sq, scale * (2 - p.sq) ** 0.5);
     g.position.y += bob * wpp;
@@ -709,16 +782,51 @@ ${MESH_FRAGMENT_COLOUR}`);
       head.quaternion.copy(tmp.qp.invert().multiply(tmp.q));
     }
 
+    // ── Clicks ──────────────────────────────────────────────────────────
+    if (robotPoke.at > pokeSeen.current) {
+      pokeSeen.current = robotPoke.at;
+      fx?.poke(robotPoke.kind, robotPoke.x, robotPoke.y);
+      if (!traveling.current) {
+        gsap.killTweensOf(p, "hop,sq");
+        if (robotPoke.kind === "teleport") {
+          // Gone in a puff of particles, then back with a jump as it
+          // reassembles (straight away if there are no particles).
+          gsap
+            .timeline({ delay: fx ? 0.62 : 0 })
+            .to(p, { sq: 0.78, duration: 0.08, ease: "power2.out" })
+            .add(() => sfx.jump())
+            .to(p, { hop: 0.34, sq: 1.12, duration: 0.26, ease: "power2.out" })
+            .to(p, { hop: 0, sq: 1, duration: 0.24, ease: "power2.in" })
+            .add(() => sfx.land())
+            .to(p, { sq: 0.8, duration: 0.07 })
+            .to(p, { sq: 1, duration: 0.45, ease: "elastic.out(1, 0.45)" });
+        } else {
+          // Knocked back a little where it was clicked.
+          gsap
+            .timeline()
+            .to(p, { hop: robotPoke.kind === "angry" ? 0.05 : 0.09, sq: 0.9, duration: 0.09, ease: "power2.out" })
+            .to(p, { hop: 0, sq: 1, duration: 0.35, ease: "elastic.out(1, 0.5)" });
+          if (robotPoke.kind === "angry") a.shakeUntil = now + 450;
+        }
+      }
+    }
+
     // ── Hover effect: particles ─────────────────────────────────────────
     if (fx) {
       g.updateMatrixWorld(true);
       const unit = p.h * wpp;
       center.copy(g.position).y += unit * 0.5;
-      const tap = robotTap.at > tapSeen.current;
-      if (tap) tapSeen.current = robotTap.at;
       fx.update(
         dt,
-        { enabled: posKey.current === "hero" && g.visible, hover: robotHover.on, tap, unit, center, camera: fullCam },
+        {
+          hoverEnabled: posKey.current === "hero" && g.visible,
+          hover: robotHover.on,
+          unit,
+          center,
+          heightPx: p.h * state.gl.getPixelRatio(),
+          angry: a.angry,
+          camera: fullCam,
+        },
         state.size.height,
         state.gl.getPixelRatio()
       );

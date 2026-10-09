@@ -1588,10 +1588,10 @@
   overflow: hidden;
 }
 .research__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 40px;
+  display: grid;
+  grid-template-columns: 1fr minmax(320px, 0.82fr);
+  align-items: end;
+  gap: clamp(28px, 4vw, 64px);
   margin-bottom: clamp(48px, 7vh, 80px);
 }
 .research__headtxt {
@@ -1606,7 +1606,38 @@
 .research__nav {
   display: flex;
   gap: 10px;
-  flex-shrink: 0;
+  margin-top: clamp(24px, 4vh, 40px);
+}
+/* Him presenting results, beside the heading. */
+.research__photo {
+  position: relative;
+  margin: 0;
+  aspect-ratio: 3 / 2;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--paper-2);
+}
+.research__photo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 70% 40%;
+}
+.research__photo figcaption {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 3;
+  padding: 7px 10px 8px;
+  border-radius: 3px;
+  background: rgba(8, 8, 8, 0.66);
+  color: var(--white);
+  font-family: var(--font-m);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 .arrow {
   width: 54px;
@@ -2229,8 +2260,8 @@
     border-left: 1px solid var(--line-dark);
   }
   .research__head {
-    flex-direction: column;
-    align-items: flex-start;
+    grid-template-columns: 1fr;
+    align-items: start;
   }
   .rcard {
     width: 82vw;
@@ -2888,6 +2919,67 @@ img.is-liquid {
   .wall__grid {
     grid-template-columns: repeat(2, 1fr);
     grid-auto-rows: 42vw;
+  }
+}
+
+/* ─── Click words: what a click knocks out of the robot ───────────────── */
+
+.clickwords {
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+  pointer-events: none;
+  overflow: hidden;
+}
+.clickword {
+  position: absolute;
+  font-family: var(--font-h);
+  font-weight: 600;
+  font-size: 21px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--ink);
+  text-shadow:
+    0 0 6px var(--paper),
+    0 0 2px var(--paper);
+  transform: translate(-50%, -50%);
+  animation: clickword 1.15s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+.clickword--stop {
+  color: var(--ember-deep);
+  font-size: 23px;
+}
+.clickword--angry {
+  color: #d3200f;
+  font-size: 26px;
+  font-weight: 700;
+  animation:
+    clickword 1.15s cubic-bezier(0.2, 0.7, 0.3, 1) forwards,
+    clickword-shake 0.09s linear 6;
+}
+@keyframes clickword {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5) rotate(0deg);
+  }
+  14% {
+    opacity: 1;
+    transform: translate(-50%, calc(-50% - 18px)) scale(1.12) rotate(var(--r, 0deg));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% - 150px)) scale(0.95) rotate(var(--r, 0deg));
+  }
+}
+@keyframes clickword-shake {
+  50% {
+    margin-left: 3px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .clickword {
+    animation-duration: 1.4s;
   }
 }
 
