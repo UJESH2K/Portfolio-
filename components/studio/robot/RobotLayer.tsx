@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { Component, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { EASTER_EGGS, ROBOT_IDLE_LINES, ROBOT_LINES, ROBOT_MENU } from "@/lib/content";
-import { goTo, robotHover, robotScreen, useRobot } from "@/lib/robot";
+import { goTo, robotHover, robotTap, robotScreen, useRobot } from "@/lib/robot";
 import { sfx } from "./sfx";
 import { burst } from "../confetti";
 
@@ -236,8 +236,9 @@ function HitArea() {
       className="robot-hit"
       hidden={hidden}
       aria-label="Ask the robot where to go"
-      // Hovering paints a colour reveal across the robot (RobotScene) and
-      // gets a happy face, at most once every couple of seconds.
+      // Hovering takes the robot apart into particles (RobotFx, on the
+      // landing page) and gets a happy face, at most once every couple of
+      // seconds; a tap does the same on touch screens.
       onPointerEnter={(e) => {
         robotHover.on = true;
         robotHover.x = e.clientX;
@@ -254,6 +255,9 @@ function HitArea() {
       }}
       onPointerLeave={() => {
         robotHover.on = false;
+      }}
+      onPointerDown={(e) => {
+        if (e.pointerType !== "mouse") robotTap.at = performance.now();
       }}
       onClick={(e) => {
         sfx.pop();
@@ -274,6 +278,40 @@ function HitArea() {
         });
       }}
     />
+  );
+}
+
+/**
+ * Asleep: a stream of Z's rising from the robot's head, drifting away from
+ * the nearest screen edge and sized to the robot. Shown for as long as the
+ * "sleep" mood lasts (any input wakes it, see EasterEggs).
+ */
+function SleepZ() {
+  const on = useRobot((s) => s.mood === "sleep" && !s.hidden);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!on) return;
+    let raf = 0;
+    const loop = () => {
+      raf = requestAnimationFrame(loop);
+      const el = ref.current;
+      if (!el) return;
+      const dir = robotScreen.side === "right" ? -1 : 1;
+      el.style.setProperty("--dir", String(dir));
+      el.style.setProperty("--s", String(Math.min(2.2, Math.max(1, robotScreen.height / 160))));
+      el.style.transform = `translate3d(${robotScreen.headX + dir * robotScreen.width * 0.36}px, ${robotScreen.headY - robotScreen.height * 0.15}px, 0)`;
+      el.style.opacity = robotScreen.visible ? "1" : "0";
+    };
+    loop();
+    return () => cancelAnimationFrame(raf);
+  }, [on]);
+  if (!on) return null;
+  return (
+    <div ref={ref} className="sleepz" aria-hidden="true">
+      <span>Z</span>
+      <span>z</span>
+      <span>Z</span>
+    </div>
   );
 }
 
@@ -330,13 +368,18 @@ function Director() {
       );
     };
 
+    // Phones keep the robot in one corner: on short sections a leap per
+    // section reads as jitter, not a tour.
+    const cornerOf = (line: (typeof ROBOT_LINES)[string]) => (window.innerWidth < 810 ? "br" : line.corner);
+
     const visit = (key: string) => {
       const line = ROBOT_LINES[key];
       if (!line) return;
       const st = useRobot.getState();
-      const moving = line.corner !== st.corner;
+      const corner = cornerOf(line);
+      const moving = corner !== st.corner;
       st.hush();
-      if (moving) st.setCorner(line.corner);
+      if (moving) st.setCorner(corner);
       present(key, moving);
     };
 
@@ -355,7 +398,7 @@ function Director() {
           // makes one move off the landing page, not two.
           const key = sectionAtCentre() || "signals";
           const line = ROBOT_LINES[key];
-          if (line) st.setCorner(line.corner);
+          if (line) st.setCorner(cornerOf(line));
           st.setMode("companion");
           present(key, true);
         } else {
@@ -462,6 +505,7 @@ export default function RobotLayer() {
         ) : null}
       </div>
       <HitArea />
+      <SleepZ />
       <Balloon />
       <RestoreButton />
       <Director />

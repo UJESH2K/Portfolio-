@@ -14,7 +14,9 @@ import BuildOrbit from "@/components/studio/sections/BuildOrbit";
 import Skills from "@/components/studio/sections/Skills";
 import SelectedWork from "@/components/studio/sections/SelectedWork";
 import About from "@/components/studio/sections/About";
-import Experience from "@/components/studio/sections/Experience";
+import Internships from "@/components/studio/sections/Internships";
+import Clients from "@/components/studio/sections/Clients";
+import Leadership from "@/components/studio/sections/Leadership";
 import Wins from "@/components/studio/sections/Wins";
 import HackWall from "@/components/studio/sections/HackWall";
 import Research from "@/components/studio/sections/Research";
@@ -48,8 +50,10 @@ export default async function Home() {
         <BuildOrbit />
         <Skills />
         <SelectedWork />
+        <Internships />
+        <Clients />
         <About />
-        <Experience />
+        <Leadership />
         <Wins />
         <HackWall />
         <Research />

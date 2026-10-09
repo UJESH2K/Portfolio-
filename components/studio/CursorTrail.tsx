@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { robotHover } from "@/lib/robot";
 
 /**
  * A short chain of dots that follows the pointer across the landing page,
  * each link springing after the one in front of it, in ink and ember on
- * the white landing page. Mouse only; touch devices never see it.
+ * the white landing page. Mouse only; touch devices never see it. It fades
+ * out over the robot, where the particle effect takes over.
  */
 const LINKS = 22;
 
@@ -23,6 +25,7 @@ export default function CursorTrail() {
     const pts = Array.from({ length: LINKS }, () => ({ x: -100, y: -100 }));
     const target = { x: -100, y: -100, active: false };
     let lastMove = 0;
+    let overRobot = 0;
     let dpr = 1;
 
     const resize = () => {
@@ -54,7 +57,8 @@ export default function CursorTrail() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       if (!target.active) return;
-      const fade = Math.max(0, 1 - Math.max(0, now - lastMove - 900) / 700);
+      overRobot += ((robotHover.on ? 1 : 0) - overRobot) * 0.15;
+      const fade = Math.max(0, 1 - Math.max(0, now - lastMove - 900) / 700) * (1 - overRobot);
       if (fade <= 0) return;
       let px = target.x;
       let py = target.y;

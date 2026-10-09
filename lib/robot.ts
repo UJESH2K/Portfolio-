@@ -106,6 +106,10 @@ export const robotScreen = {
  */
 export const robotHover = { on: false, x: 0, y: 0 };
 
+/** Last tap on the robot from a touch screen (performance.now()), which
+ *  shatters it into particles once; mice get the hover effect instead. */
+export const robotTap = { at: 0 };
+
 /** Smooth-scroll to an in-page anchor through Lenis when it is running. */
 export function goTo(href: string) {
   if (typeof window === "undefined") return;

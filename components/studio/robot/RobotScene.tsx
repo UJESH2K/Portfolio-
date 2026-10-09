@@ -1,13 +1,16 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { gsap } from "gsap";
-import { robotHover, robotScreen, useRobot } from "@/lib/robot";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { robotHover, robotScreen, robotTap, useRobot } from "@/lib/robot";
 import type { RobotMood } from "@/lib/content";
 import { sfx } from "./sfx";
+import { RobotFx, createFxUniforms } from "./RobotFx";
+import { MESH_FRAGMENT_COLOUR, MESH_FRAGMENT_CUT, MESH_FRAGMENT_HEAD, MESH_VERTEX_BODY, MESH_VERTEX_HEAD } from "./fxShaders";
 
 /**
  * The robot: "Robot Playground" by Hadrien59 (CC BY 4.0), driven by code.
@@ -22,7 +25,15 @@ import { sfx } from "./sfx";
  *   1. the face bones are overridden for moods and blinks,
  *   2. the head is turned toward the cursor,
  *   3. the whole rig is placed in screen space from `place`, a plain object
- *      that GSAP tweens for jumps, so React never re-renders per frame.
+ *      that GSAP tweens for jumps, so React never re-renders per frame,
+ *   4. on the landing page, the hover effect (RobotFx) runs: the robot comes
+ *      apart into particles under the pointer and reforms.
+ *
+ * The scene is laid out as if the canvas covered the whole window, but the
+ * canvas itself is only the robot-sized box around it, moved with the robot,
+ * and the camera renders just that window of the full view
+ * (setViewOffset). Same picture, a fraction of the pixels: a full-screen
+ * WebGL canvas redrawn every frame was the biggest cost on phones.
  */
 
 const MODEL_URL = "/models/robot.glb";
@@ -68,8 +79,10 @@ function targetFor(key: Spot, w: number, h: number) {
       ? { x: w * 0.5, y: 76 + h * 0.42 - 12, h: Math.min(h * 0.2, w * 0.46), ry: -0.12 }
       : { x: w * 0.74, y: h * 0.865, h: Math.min(h * 0.55, w * 0.33), ry: -0.3 };
   }
-  const size = mobile ? 88 : 150;
-  const inset = mobile ? 46 : 92;
+  // Kept small and tucked into the corner, so it rides along without
+  // covering the text it is talking about.
+  const size = mobile ? 76 : 118;
+  const inset = mobile ? 40 : 72;
   const right = key === "br" || key === "tr";
   const top = key === "tl" || key === "tr";
   // Top spots sit just under the header so the logo and menu stay clear.
@@ -91,6 +104,55 @@ function routeFor(from: Spot | null, to: Spot): { out: Edge; in: Edge } {
   return { out: "top", in: "top" };
 }
 
+/**
+ * The model is 34 skinned parts, each with its own copy of the same 112-bone
+ * skeleton: 34 skeletons recomputed and 34 bone textures uploaded every
+ * frame. Their bind poses differ only by a per-part offset (left by mesh
+ * compression), so that offset is baked into each part's geometry once and
+ * every part is bound to the first part's skeleton: the same pose, one
+ * skeleton update per frame. A part whose offset is not uniform across its
+ * bones keeps its own skeleton.
+ */
+function shareSkeleton(root: THREE.Object3D) {
+  const meshes: THREE.SkinnedMesh[] = [];
+  root.traverse((o) => {
+    if ((o as THREE.SkinnedMesh).isSkinnedMesh) meshes.push(o as THREE.SkinnedMesh);
+  });
+  const ref = meshes[0]?.skeleton;
+  if (!ref) return;
+  const inv = new THREE.Matrix4();
+  const off = new THREE.Matrix4();
+  const probe = new THREE.Matrix4();
+  for (const m of meshes) {
+    const sk = m.skeleton;
+    if (sk === ref || sk.bones.length !== ref.bones.length || sk.bones.some((b, i) => b !== ref.bones[i])) continue;
+    // offset = refInverse⁻¹ · ownInverse, the same for every bone if shareable.
+    off.copy(inv.copy(ref.boneInverses[0]).invert()).multiply(sk.boneInverses[0]);
+    const uniform = sk.boneInverses.every((bi, i) => {
+      probe.copy(ref.boneInverses[i]).multiply(off);
+      return probe.elements.every((e, k) => Math.abs(e - bi.elements[k]) < 1e-3 * (1 + Math.abs(e)));
+    });
+    if (!uniform) continue;
+    const g = m.geometry;
+    // Quantised attributes can't hold the transformed values; widen to floats.
+    for (const name of ["position", "normal"]) {
+      const a = g.getAttribute(name) as THREE.BufferAttribute | undefined;
+      if (!a) continue;
+      const f = new Float32Array(a.count * 3);
+      for (let i = 0; i < a.count; i++) {
+        f[i * 3] = a.getX(i);
+        f[i * 3 + 1] = a.getY(i);
+        f[i * 3 + 2] = a.getZ(i);
+      }
+      g.setAttribute(name, new THREE.BufferAttribute(f, 3));
+    }
+    const bindInv = inv.copy(m.bindMatrix).invert();
+    g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(bindInv, off).multiply(m.bindMatrix));
+    m.bind(ref, m.bindMatrix);
+    sk.dispose();
+  }
+}
+
 /** How far the landing page has scrolled, capped once it is off screen. */
 function heroShift(vh: number) {
   return Math.min(window.scrollY, vh * 1.5);
@@ -98,7 +160,16 @@ function heroShift(vh: number) {
 
 function Robot() {
   const gltf = useGLTF(MODEL_URL, false, true);
-  const { size, camera } = useThree();
+  const { camera, gl: renderer } = useThree();
+  // The camera as it would be for a full-window canvas: used for every
+  // screen-space calculation (projections, the pointer ray).
+  const fullCam = useMemo(() => {
+    const c = new THREE.PerspectiveCamera(FOV, 1, 0.1, 60);
+    c.position.set(0, 0, CAM_Z);
+    c.updateMatrixWorld();
+    return c;
+  }, []);
+  const box = useRef({ w: 0, h: 0 });
   const rig = useRef<THREE.Group>(null);
   const setReady = useRobot((s) => s.setReady);
 
@@ -120,48 +191,65 @@ function Robot() {
     // The hologram disc is twice the robot's width; shrink it to a platform.
     ground?.scale.multiplyScalar(0.58);
 
-    // Hover colour reveal: inside a circle around the pointer the robot's
-    // colours rotate through the spectrum, with a soft bright ring at the
-    // edge, like paint wiping across it. Patched into its own material once.
-    const reveal = { uReveal: { value: new THREE.Vector3(0, 0, 0) }, uHue: { value: 0 } };
+    // The robot's material gets the hover effect's half: the dissolve under
+    // the pointer, its glowing rim, the spectrum glowing from inside, and a
+    // pearly sheen at grazing angles. Patched once; uniforms are shared with
+    // the particles (RobotFx).
+    const fxU = createFxUniforms();
     scene.traverse((o) => {
       const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
-      if (!m || m.name !== "material" || m.userData.reveal) return;
-      m.userData.reveal = true;
-      m.customProgramCacheKey = () => "robot-reveal";
+      if (!m || m.name !== "material" || m.userData.fx) return;
+      m.userData.fx = true;
+      m.envMapIntensity = 0.85;
+      m.customProgramCacheKey = () => "robot-fx";
       m.onBeforeCompile = (shader) => {
-        shader.uniforms.uReveal = reveal.uReveal;
-        shader.uniforms.uHue = reveal.uHue;
+        Object.assign(shader.uniforms, fxU);
+        shader.vertexShader = shader.vertexShader
+          .replace("void main() {", `${MESH_VERTEX_HEAD}
+void main() {`)
+          .replace("#include <project_vertex>", `#include <project_vertex>
+${MESH_VERTEX_BODY}`);
         shader.fragmentShader = shader.fragmentShader
-          .replace(
-            "void main() {",
-            `uniform vec3 uReveal;
-uniform float uHue;
-vec3 hueShift(vec3 c, float a) {
-  const vec3 k = vec3(0.57735);
-  float ca = cos(a);
-  return c * ca + cross(k, c) * sin(a) + k * dot(k, c) * (1.0 - ca);
-}
-void main() {`
-          )
-          .replace(
-            "#include <dithering_fragment>",
-            `#include <dithering_fragment>
-if (uReveal.z > 0.5) {
-  float d = distance(gl_FragCoord.xy, uReveal.xy);
-  float inside = 1.0 - smoothstep(uReveal.z * 0.8, uReveal.z, d);
-  float ring = smoothstep(uReveal.z * 0.74, uReveal.z * 0.9, d) * (1.0 - smoothstep(uReveal.z * 0.9, uReveal.z, d));
-  vec3 painted = hueShift(gl_FragColor.rgb, uHue) * 1.12 + 0.03;
-  gl_FragColor.rgb = mix(gl_FragColor.rgb, painted, inside) + ring * vec3(1.0, 0.86, 0.62) * 0.4;
-}`
-          );
+          .replace("void main() {", `${MESH_FRAGMENT_HEAD}
+void main() {`)
+          .replace("#include <clipping_planes_fragment>", `#include <clipping_planes_fragment>
+${MESH_FRAGMENT_CUT}`)
+          .replace("#include <dithering_fragment>", `#include <dithering_fragment>
+${MESH_FRAGMENT_COLOUR}`);
       };
       m.needsUpdate = true;
     });
+    shareSkeleton(scene);
     const faceBones: Record<string, THREE.Object3D | null> = {};
     [...Object.values(EYES).flat(), ...Object.values(MOUTHS).flat()].forEach((n) => (faceBones[n] = byName(n)));
-    return { scene, bot, head: byName("Head_M_033"), ground, toys, faceBones, reveal };
+    return { scene, bot, head: byName("Head_M_033"), ground, toys, faceBones, fxU };
   }, [gltf.scene]);
+
+  // The particle half of the hover effect. Fewer particles on phones; none
+  // at all for reduced motion or without float render targets. Built while
+  // the browser is idle after the robot appears (sampling ~36k points takes
+  // a moment), so it never delays the page.
+  const gl = useThree((st) => st.gl);
+  const [fx, setFx] = useState<RobotFx | null>(null);
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const small = window.matchMedia("(pointer: coarse)").matches || Math.min(window.innerWidth, window.innerHeight) < 700;
+    let made: RobotFx | null = null;
+    const build = () => {
+      made = RobotFx.create(gl, parts.scene, parts.fxU, small ? 14000 : 36000);
+      setFx(made);
+    };
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    const id = w.requestIdleCallback ? w.requestIdleCallback(build, { timeout: 2500 }) : window.setTimeout(build, 1200);
+    return () => {
+      if (w.cancelIdleCallback) w.cancelIdleCallback(id);
+      else clearTimeout(id);
+      made?.dispose();
+      setFx(null);
+    };
+  }, [gl, parts]);
+  const tapSeen = useRef(0);
+  const center = useMemo(() => new THREE.Vector3(), []);
 
   const mixer = useMemo(() => new THREE.AnimationMixer(parts.scene), [parts.scene]);
   const actions = useMemo(() => {
@@ -442,6 +530,12 @@ if (uReveal.z > 0.5) {
     const a = anim.current;
     const now = performance.now();
     const s = useRobot.getState();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    if (fullCam.aspect !== vw / vh) {
+      fullCam.aspect = vw / vh;
+      fullCam.updateProjectionMatrix();
+    }
 
     // Bones we override after the mixer (head turn, face swaps) are put back
     // to the clean animated pose first. Three.js only rewrites a bone when
@@ -517,7 +611,7 @@ if (uReveal.z > 0.5) {
     // a jump, spin or reaction gets interrupted, it recovers on its own
     // within a second or two instead of staying stuck.
     if (p.h > 0 && posKey.current && !gsap.isTweening(p)) {
-      const rest = targetFor(posKey.current, size.width, size.height);
+      const rest = targetFor(posKey.current, vw, vh);
       const k = 1 - Math.exp(-dt * 3);
       p.x += (rest.x - p.x) * k;
       p.y += (rest.y - p.y) * k;
@@ -530,10 +624,10 @@ if (uReveal.z > 0.5) {
     }
     // While it stands on the landing page it scrolls away with the page
     // instead of hanging in place over the next section.
-    const yScreen = p.y - (posKey.current === "hero" ? heroShift(size.height) : 0);
+    const yScreen = p.y - (posKey.current === "hero" ? heroShift(vh) : 0);
     const cam = camera as THREE.PerspectiveCamera;
     const worldH = 2 * CAM_Z * Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
-    const wpp = worldH / size.height;
+    const wpp = worldH / vh;
     const scale = (p.h * wpp) / botH.current;
     // Companion only: a slow hover, and a lean against the scroll direction.
     const companion = posKey.current !== "hero";
@@ -547,29 +641,41 @@ if (uReveal.z > 0.5) {
     // On the landing the whole body turns a little toward the cursor.
     const bodyT =
       !companion && pointer.current.seen
-        ? THREE.MathUtils.clamp(((pointer.current.x * size.width - p.x) / size.width) * 1.3, -0.55, 0.45)
+        ? THREE.MathUtils.clamp(((pointer.current.x * vw - p.x) / vw) * 1.3, -0.55, 0.45)
         : 0;
     a.bodyYaw += (bodyT - a.bodyYaw) * (1 - Math.exp(-dt * 4));
     let jitter = 0;
     if (now < a.shakeUntil) jitter = (Math.random() - 0.5) * p.h * 0.02;
-    g.position.set((p.x + jitter - size.width / 2) * wpp, (size.height / 2 - yScreen) * wpp + p.hop * p.h * wpp, 0);
+    g.position.set((p.x + jitter - vw / 2) * wpp, (vh / 2 - yScreen) * wpp + p.hop * p.h * wpp, 0);
     g.scale.set(scale * (2 - p.sq) ** 0.5, scale * p.sq, scale * (2 - p.sq) ** 0.5);
     g.position.y += bob * wpp;
-    g.rotation.set(0, p.ry + p.spin + a.bodyYaw, p.rz + a.lean * (p.x > size.width / 2 ? 1 : -1));
+    // While the pointer is on it, the robot also tilts toward it a little.
+    const tilt = fx?.tilt ?? { x: 0, z: 0 };
+    g.rotation.set(tilt.x, p.ry + p.spin + a.bodyYaw, p.rz + a.lean * (p.x > vw / 2 ? 1 : -1) + tilt.z);
     g.visible = !s.hidden && p.h > 0;
 
-    // ── Hover colour reveal ─────────────────────────────────────────────
+    // ── The canvas window around the robot ──────────────────────────────
+    // Big enough for the hologram disc, a hop and (on the landing) the
+    // particle cloud; resized only when the robot changes size by a lot,
+    // moved every frame.
     {
-      const dpr = state.gl.getPixelRatio();
-      const u = parts.reveal.uReveal.value;
-      const target = robotHover.on ? robotScreen.height * 0.42 * dpr : 0;
-      u.z += (target - u.z) * (1 - Math.exp(-dt * (robotHover.on ? 7 : 4)));
-      if (u.z < 0.6 && !robotHover.on) u.z = 0;
-      if (robotHover.on || u.z > 0) {
-        u.x += (robotHover.x * dpr - u.x) * 0.35;
-        u.y += ((size.height - robotHover.y) * dpr - u.y) * 0.35;
+      const hero = posKey.current === "hero";
+      const needW = Math.ceil(p.h * (hero ? 1.6 : 1.75));
+      const needH = Math.ceil(p.h * (hero ? 1.55 : 1.5));
+      const b = box.current;
+      const el = renderer.domElement.closest<HTMLElement>(".robot-canvas");
+      if (el && (b.w < needW || b.h < needH || b.w > needW * 1.3 || b.h > needH * 1.3)) {
+        b.w = Math.ceil(needW / 16) * 16;
+        b.h = Math.ceil(needH / 16) * 16;
+        el.style.width = `${b.w}px`;
+        el.style.height = `${b.h}px`;
       }
-      if (robotHover.on) parts.reveal.uHue.value = (parts.reveal.uHue.value + dt * 1.6) % (Math.PI * 2);
+      const ox = Math.round(p.x - b.w / 2);
+      const oy = Math.round(yScreen + p.h * 0.12 - b.h);
+      if (el) el.style.transform = `translate3d(${ox}px, ${oy}px, 0)`;
+      cam.aspect = vw / vh;
+      cam.setViewOffset(vw, vh, ox, oy, b.w, b.h);
+      cam.updateProjectionMatrix();
     }
 
     // ── Look at the cursor ──────────────────────────────────────────────
@@ -577,17 +683,17 @@ if (uReveal.z > 0.5) {
       g.updateMatrixWorld(true);
       const head = parts.head;
       head.getWorldPosition(tmp.v);
-      const hp = tmp.v.clone().project(cam);
-      const hx = (hp.x * 0.5 + 0.5) * size.width;
-      const hy = (-hp.y * 0.5 + 0.5) * size.height;
+      const hp = tmp.v.clone().project(fullCam);
+      const hx = (hp.x * 0.5 + 0.5) * vw;
+      const hy = (-hp.y * 0.5 + 0.5) * vh;
       robotScreen.headX = hx;
       robotScreen.headY = hy;
 
       const weight = a.seg === "idle" ? 1 : a.seg === "play" ? 0.15 : 0.45;
-      const px = pointer.current.seen ? pointer.current.x * size.width : hx - size.width * 0.2;
-      const py = pointer.current.seen ? pointer.current.y * size.height : hy + 40;
-      const yawT = THREE.MathUtils.clamp(((px - hx) / size.width) * 1.8, -0.6, 0.6) * weight;
-      const pitchT = THREE.MathUtils.clamp(((py - hy) / size.height) * 1.3, -0.32, 0.42) * weight;
+      const px = pointer.current.seen ? pointer.current.x * vw : hx - vw * 0.2;
+      const py = pointer.current.seen ? pointer.current.y * vh : hy + 40;
+      const yawT = THREE.MathUtils.clamp(((px - hx) / vw) * 1.8, -0.6, 0.6) * weight;
+      const pitchT = THREE.MathUtils.clamp(((py - hy) / vh) * 1.3, -0.32, 0.42) * weight;
       const k = 1 - Math.exp(-dt * 6);
       a.lookYaw += (yawT - a.lookYaw) * k;
       a.lookPitch += (pitchT - a.lookPitch) * k;
@@ -603,20 +709,55 @@ if (uReveal.z > 0.5) {
       head.quaternion.copy(tmp.qp.invert().multiply(tmp.q));
     }
 
+    // ── Hover effect: particles ─────────────────────────────────────────
+    if (fx) {
+      g.updateMatrixWorld(true);
+      const unit = p.h * wpp;
+      center.copy(g.position).y += unit * 0.5;
+      const tap = robotTap.at > tapSeen.current;
+      if (tap) tapSeen.current = robotTap.at;
+      fx.update(
+        dt,
+        { enabled: posKey.current === "hero" && g.visible, hover: robotHover.on, tap, unit, center, camera: fullCam },
+        state.size.height,
+        state.gl.getPixelRatio()
+      );
+    }
+
     // ── Publish the screen box for the DOM overlays ─────────────────────
     robotScreen.visible = g.visible && yScreen > 0;
     robotScreen.width = p.h * 0.72;
     robotScreen.height = p.h;
     robotScreen.left = p.x - robotScreen.width / 2;
     robotScreen.top = yScreen - p.h;
-    robotScreen.side = p.x > size.width / 2 ? "right" : "left";
+    robotScreen.side = p.x > vw / 2 ? "right" : "left";
   });
 
   return (
-    <group ref={rig}>
-      <primitive object={parts.scene} />
-    </group>
+    <>
+      <group ref={rig}>
+        <primitive object={parts.scene} />
+      </group>
+      {fx ? <primitive object={fx.points} /> : null}
+    </>
   );
+}
+
+/** Soft studio reflections, generated on the GPU (no file to download), so
+ *  the robot's metal parts catch light instead of reading flat. */
+function Reflections() {
+  const { gl, scene } = useThree();
+  useEffect(() => {
+    const pm = new THREE.PMREMGenerator(gl);
+    const env = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = env;
+    pm.dispose();
+    return () => {
+      scene.environment = null;
+      env.dispose();
+    };
+  }, [gl, scene]);
+  return null;
 }
 
 function Lights() {
@@ -636,7 +777,8 @@ export default function RobotScene() {
       dpr={[1, 1.5]}
       gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
       camera={{ fov: FOV, position: [0, 0, CAM_Z], near: 0.1, far: 60 }}
-      style={{ position: "fixed", inset: 0, pointerEvents: "none" }}
+      // Sized and moved every frame by the Robot to the box around it.
+      style={{ position: "fixed", left: 0, top: 0, width: 320, height: 320, pointerEvents: "none" }}
       onCreated={({ gl }) => {
         gl.setClearColor(0x000000, 0);
         gl.outputColorSpace = THREE.SRGBColorSpace;
@@ -645,6 +787,7 @@ export default function RobotScene() {
       }}
     >
       <Lights />
+      <Reflections />
       <Suspense fallback={null}>
         <Robot />
       </Suspense>

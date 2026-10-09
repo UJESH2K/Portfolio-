@@ -738,19 +738,18 @@ export const INTERESTS: Interest[] = [
 
 /**
  * The site's chapters, in page order. The top nav shows them as one row and
- * marks the one being read; `from` is where that chapter starts when it is
- * not the link target itself (the story opens with the signals and
- * statement above it).
+ * marks the one being read; `from` is where a chapter starts when that is
+ * not the link target itself.
  */
 export const SITE_NAV: { label: string; href: string; from?: string }[] = [
-  { label: "Story", href: "#story", from: "#main" },
   { label: "Work", href: "#work" },
-  { label: "About", href: "#about" },
-  { label: "Experience", href: "#experience" },
+  { label: "Internships", href: "#internships" },
+  { label: "Freelance", href: "#freelance" },
+  { label: "Leadership", href: "#leadership" },
   { label: "Wins", href: "#wins" },
   { label: "Research", href: "#research" },
   { label: "Contact", href: "#contact" },
-];
+]
 
 export const PRELOADER = {
   intro: [
@@ -790,7 +789,8 @@ export const LANDING = {
       text: "Scroll with me, or jump straight to a chapter:",
       chips: [
         { label: "Projects", href: "#work" },
-        { label: "Internships & freelance", href: "#experience" },
+        { label: "Internships", href: "#internships" },
+        { label: "Freelance", href: "#freelance" },
         { label: "Hackathon wins", href: "#wins" },
         { label: "Research", href: "#research" },
         { label: "Life outside work", href: "#offclock" },
@@ -816,7 +816,7 @@ export const STORY = {
       issue: "#01",
       title: "College, the long way round",
       text: "Computer science at Atria (VTU) since 2023, plus a 200-plus member code club I now lead.",
-      href: "#about",
+      href: "#leadership",
     },
     {
       issue: "#02",
@@ -827,14 +827,14 @@ export const STORY = {
     {
       issue: "#03",
       title: "Internships",
-      text: "Outbreak prediction at EaseMed, a bird-species vision dataset at Hitachi.",
-      href: "#experience",
+      text: "Outbreak prediction at EaseMed, bird-species detection at Hitachi, lightweight vision models with AICTE.",
+      href: "#internships",
     },
     {
       issue: "#04",
       title: "Freelance",
-      text: "Edactly's prompt-to-lesson video pipeline, plus client sites like NEXR.",
-      href: "#experience",
+      text: "Edactly's prompt-to-lesson video pipeline, plus sites for NEXR, a resort and a merch store.",
+      href: "#freelance",
     },
     {
       issue: "#05",
@@ -846,7 +846,7 @@ export const STORY = {
       issue: "#06",
       title: "AI/ML, in the room",
       text: "AI/ML events and talks, on the stage and in the audience. RAG, vision and GPUs, mostly.",
-      href: "#build",
+      href: "#leadership",
     },
     {
       issue: "#07",
@@ -872,6 +872,7 @@ export const SIGNALS = {
     { name: "EaseMed", tag: "Internship" },
     { name: "Edactly", tag: "Freelance" },
     { name: "Hitachi", tag: "ML internship" },
+    { name: "AICTE × Microsoft & SAP", tag: "ML internship" },
     { name: "Inception", tag: "Winner" },
     { name: "Denova", tag: "Winner" },
     { name: "Cardano", tag: "Winner" },
@@ -950,100 +951,387 @@ export const SKILL_GROUPS: { group: string; items: string[] }[] = [
   { group: "Cloud", items: ["AWS EC2", "S3", "Lambda", "CloudFront", "Docker", "Nginx", "GitHub Actions"] },
 ];
 
-export type WorkVisual = "gradmesh" | "blockparty";
+// ─── Work: projects, internships, clients, leadership ─────────────────────
+// Four separate lists, each with its own section and its own link
+// (#work, #internships, #freelance, #leadership), so any one of them can be
+// shown on its own. Nothing appears in more than one.
 
-export type WorkCard = {
+export type WorkKind = "hackathon" | "research" | "side";
+
+/** A light typographic cover for work with no screenshot. */
+export type WorkCover = { stat: string; label: string };
+
+export type WorkItem = {
   id: string;
   title: string;
   headline: string;
   text: string;
+  kind: WorkKind;
+  /** Where and when, e.g. "Inception hackathon · Winner · 2026". */
   context: string;
-  tags: string[];
+  stack: string[];
   /** Base path under /public without the -1600.webp suffix. */
   image?: string;
   imageAlt?: string;
-  /** Rendered in code instead of a photo when there is no screenshot. */
-  visual?: WorkVisual;
-  href?: string;
-  linkLabel?: string;
-  /** Layout width on desktop. */
-  span: "wide" | "narrow" | "full";
+  /** Short muted clip shown over the image on hover. */
+  video?: string;
+  cover?: WorkCover;
+  live?: string;
+  code?: string;
+  /** Large card at the top of the index. */
+  featured?: boolean;
 };
 
 export const WORK_INTRO = {
-  eyebrow: "Selected work",
+  eyebrow: "Projects",
   title: ["Built, shipped,", "and sometimes won."],
-  text: "Production features at two startups, research accepted at IMPACT-2027 and hackathon builds that took first place. Each one end to end: architecture, code and deploy.",
+  text: "Hackathon builds that took first place, research on its way to a conference stage, and the side projects in between. Live links where they're live, code where it's public.",
 };
 
-export const WORK: WorkCard[] = [
+export const WORK_FILTERS: { id: WorkKind | "all"; label: string }[] = [
+  { id: "all", label: "Everything" },
+  { id: "hackathon", label: "Hackathon builds" },
+  { id: "research", label: "Research" },
+  { id: "side", label: "Side projects" },
+];
+
+export const WORK: WorkItem[] = [
   {
     id: "worldforge",
-    title: "WorldForge AI",
-    headline: "Game worlds generated from a single prompt",
-    text: "A browser game engine that turns a natural-language prompt into terrain, environments and NPCs in real time. Built in React, Three.js and TypeScript at India's first world-model hackathon, and it won.",
+    title: "WorldForge",
+    headline: "Build a world from a sentence, then train robots in it",
+    text: "Won India's first world-model hackathon with a browser engine that turns a prompt into a world you can fly through. It has since grown into WorldForge: navigable AI worlds where vision-language models read the frames and RL agents train in simulation.",
+    kind: "hackathon",
     context: "Inception hackathon · Winner · 2026",
-    tags: ["Hackathon winner", "Three.js · WebGL"],
-    image: "/media/win-inception",
-    imageAlt: "Ujesh and teammates holding the Inception hackathon winner's cheque",
-    span: "wide",
+    stack: ["React", "Three.js", "TypeScript", "VLMs", "RL"],
+    image: "/media/site-worldforge",
+    imageAlt: "The WorldForge site: 'Score a robot before you build it'",
+    video: "/reel/inceptio.mp4",
+    live: "https://i-nception-2.vercel.app",
+    code: "https://github.com/UJESH2K/INception-2",
+    featured: true,
   },
   {
     id: "gradmesh",
     title: "GradMesh",
     headline: "Every idle GPU on the network, one training cluster",
-    text: "A coordinator-worker architecture that pools consumer GPUs across a LAN into a single training cluster. Benchmarked across four GPU nodes at up to 1.8× the speed of one. Accepted at IMPACT-2027.",
-    context: "Research · IMPACT-2027 · Jan 2027",
-    tags: ["Accepted paper", "Distributed systems"],
-    visual: "gradmesh",
-    href: "https://github.com/UJESH2K/Gradmesh-v4",
-    linkLabel: "View the code",
-    span: "narrow",
+    text: "A coordinator-worker architecture that pools consumer GPUs across a LAN into one training cluster. It measures what each device can actually do, sizes the work to match and trains one shared model. Accepted at IMPACT-2027.",
+    kind: "research",
+    context: "Paper accepted · IMPACT-2027 · Jan 2027",
+    stack: ["Python", "FastAPI", "PyTorch", "FedAvg"],
+    cover: { stat: "1.8×", label: "faster than a single GPU, across four nodes" },
+    code: "https://github.com/UJESH2K/Gradmesh-v4",
+    featured: true,
   },
   {
-    id: "easemed",
-    title: "EaseMed",
-    headline: "Predicting outbreaks before the shelves run dry",
-    text: "As the sole engineer on the feature, I built an outbreak-prediction model that correlates global trade data with WHO and government health APIs to set inventory-risk guardrails, alongside a WebSocket messaging backend for hospitals and vendors.",
-    context: "EaseMed · Full-stack intern · 2026",
-    tags: ["Healthcare", "Applied ML"],
-    image: "/media/work-easemed",
-    imageAlt: "The EaseMed landing page",
-    span: "wide",
+    id: "tidewatch",
+    title: "Tidewatch",
+    headline: "Fraud alerts, investigated in under a second",
+    text: "Agentic fraud investigation on TigerGraph Savanna. Each alert is worked the way an analyst would, graph queries first, with no model in the decision loop: twenty alerts investigated in 0.7 seconds.",
+    kind: "hackathon",
+    context: "Hacker House Goa · 2026",
+    stack: ["Python", "TigerGraph", "Agents"],
+    image: "/media/site-tidewatch",
+    imageAlt: "The Tidewatch dashboard: 20 alerts investigated in 0.7 s",
+    live: "https://hhgoa.ujesh.in",
+    code: "https://github.com/UJESH2K/HHGOA",
   },
   {
-    id: "edactly",
-    title: "Edactly",
-    headline: "A three-minute lesson video for about ₹7",
-    text: "Prompt in, explainer video out. A Python and Manim pipeline grounded by RAG over the NCERT grades 1–12 curriculum, deployed on S3 and Lambda, renders a three-minute video in about five minutes.",
-    context: "Edactly · Freelance · 2026 – now",
-    tags: ["EdTech", "RAG · AWS Lambda"],
-    image: "/media/work-edactly-2",
-    imageAlt: "An Edactly screen with an open book and a 'Download Sunday' prompt",
-    span: "wide",
-  },
-  {
-    id: "blockparty",
-    title: "BlockParty",
-    headline: "Bounties that pay out the moment a PR merges",
-    text: "A GitHub bounty marketplace with OAuth through Clerk and role-based access. It creates repository webhooks itself, watches pull requests live and completes the bounty when the PR is merged.",
-    context: "Side project · Sep 2025",
-    tags: ["Dev tools", "GitHub webhooks"],
-    visual: "blockparty",
-    span: "narrow",
+    id: "nwis",
+    title: "NWIS",
+    headline: "What the neighbouring wells already learned",
+    text: "Nearby Wells Intelligence System: decision support for drilling crews that surfaces the risks recorded in offset wells, such as mud loss and stuck pipe, along the path of the well being drilled. Built for Smart India Hackathon 2026 and demoed on synthetic data.",
+    kind: "hackathon",
+    context: "Smart India Hackathon 2026 · PS 26121",
+    stack: ["TypeScript", "Next.js", "AI search"],
+    image: "/media/site-nwis",
+    imageAlt: "The NWIS dashboard for a well being drilled",
+    live: "https://sih2026-lemon.vercel.app",
+    code: "https://github.com/UJESH2K/sih2026",
   },
   {
     id: "blinky",
     title: "Blinky",
     headline: "Attention that remembers on your behalf",
     text: "Holds the one thing you sat down to do, notices when you drift and quotes your own intent back to you. Frames are analysed and thrown away: the table has no image column, so privacy is enforced by the schema.",
+    kind: "hackathon",
     context: "Accessibility hackathon · 2025",
-    tags: ["Vision models", "Privacy by schema"],
-    image: "/media/life-desk",
-    imageAlt: "Two developers at a desk working on Blinky",
-    href: "https://hhhs-smoky.vercel.app",
-    linkLabel: "Open the demo",
-    span: "full",
+    stack: ["Next.js", "Vision models", "Supabase"],
+    image: "/media/site-blinky",
+    imageAlt: "Blinky: 'You did not forget how. You forgot what.'",
+    live: "https://hhhs-smoky.vercel.app",
+    code: "https://github.com/UJESH2K/ADHD-hack",
+  },
+  {
+    id: "gitpay",
+    title: "GitPay",
+    headline: "Open-source bounties that pay out on merge",
+    text: "A decentralised bounty platform for open-source work: Solidity escrow holds the reward, GitHub workflows watch the pull request, and the payout happens on its own when it merges. Won the Solana track at Denova.",
+    kind: "hackathon",
+    context: "Denova blockchain hackathon · Winner · Solana track",
+    stack: ["Solidity", "Solana", "GitHub webhooks", "React"],
+    cover: { stat: "merge → paid", label: "trustless payouts, no middleman" },
+    code: "https://github.com/UJESH2K/Gitpay",
+  },
+  {
+    id: "agents",
+    title: "Agents Playground",
+    headline: "AI trading agents, scored on-chain",
+    text: "Three AI trading agents (arbitrage, mean reversion and momentum) compete under identical market conditions on BNB Chain, with every result recorded on-chain so the leaderboard can't be argued with.",
+    kind: "hackathon",
+    context: "BNB Chain hackathon · 2025",
+    stack: ["Node.js", "Solidity", "ethers.js", "BNB Chain"],
+    image: "/media/site-agents",
+    imageAlt: "Agents Playground: the BNB Chain arbitration network",
+    live: "https://crypto-agent-training.vercel.app",
+    code: "https://github.com/UJESH2K/CRYPTO-AGENT-TRAINING",
+  },
+  {
+    id: "tutor",
+    title: "AI learning assistant",
+    headline: "A tutor with a face, grounded in the syllabus",
+    text: "Personalised lessons from a realistic AI avatar, with a RAG pipeline keeping answers on the syllabus, Manim drawing diagrams on demand and eye tracking adapting the pace to the learner's focus.",
+    kind: "hackathon",
+    context: "Cypher 3 hackathon",
+    stack: ["RAG", "Manim", "HeyGen", "Eye tracking"],
+    cover: { stat: "RAG + avatar", label: "lessons that stay on the syllabus" },
+  },
+  {
+    id: "chitoor",
+    title: "Chitoor",
+    headline: "2,000 acres, mapped by drone and segmented by our own model",
+    text: "A drone survey of about 2,000 acres of farmland by a team of four students. We traced plant boundaries in the aerial imagery by hand first, then trained a segmentation model to do it automatically.",
+    kind: "research",
+    context: "Field survey · 2024",
+    stack: ["Python", "Drone survey", "Image segmentation"],
+    image: "/media/work-chitoor",
+    imageAlt: "The Chitoor team at work: laptops, aerial imagery and hand-traced field maps",
+  },
+  {
+    id: "tour",
+    title: "Atria 360° tour",
+    headline: "The campus, explorable from a browser",
+    text: "A 360° virtual tour of the Atria campus: walk between panoramas, open hotspots and find your way around before you ever visit.",
+    kind: "side",
+    context: "Virtual tour · college project",
+    stack: ["JavaScript", "3Sixty", "WebGL"],
+    image: "/media/site-atriatour",
+    imageAlt: "A panorama from the Atria virtual tour",
+    live: "https://tour-v3-one.vercel.app",
+    code: "https://github.com/UJESH2K/tour-v3",
+  },
+  {
+    id: "pose",
+    title: "Form check",
+    headline: "Pose estimation that grades your workout",
+    text: "Real-time pose tracking with MediaPipe and a temporal read of joint angles, so drifting exercise form is caught as it happens. A finalist at PAC Hack, Presidency University.",
+    kind: "hackathon",
+    context: "PAC Hack · Finalist",
+    stack: ["Python", "MediaPipe", "OpenCV"],
+    cover: { stat: "33 joints", label: "tracked live, every rep" },
+  },
+  {
+    id: "skin",
+    title: "Skin cancer prediction",
+    headline: "CNN classifiers for skin-lesion images",
+    text: "Deep-learning models trained on HAM10000 with careful preprocessing, augmentation and class balancing, judged on precision, recall and F1 for assisted screening.",
+    kind: "side",
+    context: "Applied ML",
+    stack: ["Python", "TensorFlow", "CNNs"],
+    cover: { stat: "HAM10000", label: "dermoscopic images, classified" },
+    code: "https://github.com/UJESH2K/Skin-cancer-prediction",
+  },
+];
+
+export type Internship = {
+  company: string;
+  role: string;
+  period: string;
+  place: string;
+  sub: string;
+  points: string[];
+  image?: string;
+  imageAlt?: string;
+  link?: { label: string; href: string };
+  note?: string;
+};
+
+export const INTERNSHIPS_INTRO = {
+  eyebrow: "Internships",
+  title: "Three internships, real people on the other end.",
+  text: "A healthcare startup, an industry research collaboration with Hitachi, and an AICTE programme with Microsoft and SAP.",
+};
+
+export const INTERNSHIPS: Internship[] = [
+  {
+    company: "EaseMed",
+    role: "Full Stack Developer Intern",
+    period: "Jan – Jun 2026",
+    place: "Bengaluru",
+    sub: "Sole engineer on outbreak prediction.",
+    points: [
+      "Built and shipped a disease-outbreak prediction model that correlates global trade data with WHO and government health APIs to set inventory-risk guardrails.",
+      "A serverless ingestion pipeline in Node.js and Supabase with a Hugging Face-hosted parser, validated with 10–20 concurrent users.",
+      "WebSocket messaging between hospitals and vendors, a React and Next.js frontend, auth and role-based access, with inference services on EC2, S3, Nginx, PM2 and Vercel.",
+    ],
+    image: "/media/work-easemed",
+    imageAlt: "The EaseMed landing page: where healthcare demand meets global supply",
+    note: "The public demo is offline for now.",
+  },
+  {
+    company: "Hitachi",
+    role: "Machine Learning Intern",
+    period: "2025 · 3 months",
+    place: "Bengaluru · with Atria",
+    sub: "From camera to classifier.",
+    points: [
+      "Led a student team building a ~600-image dataset for bird-species detection, from raw camera footage captured around Bengaluru.",
+      "Labelled it in Label Studio, then trained CNN classifiers and YOLOv11 detectors, reaching about 0.70 mAP.",
+      "Owned model development and pipeline design end to end, working with Hitachi researchers and academic mentors.",
+    ],
+    image: "/media/work-hitachi-bird",
+    imageAlt: "A bird photographed for the species-detection dataset",
+  },
+  {
+    company: "AICTE × Microsoft & SAP",
+    role: "Machine Learning Intern",
+    period: "2024",
+    place: "India",
+    sub: "Small models that keep their accuracy.",
+    points: [
+      "An end-to-end image-classification project on real-world data: experiments, evaluation and a written technical report.",
+      "Compared MobileNetV2 with ResNet-50; MobileNetV2 won the efficiency-accuracy trade-off for lightweight deployment.",
+      "Up to 0.96 accuracy on optimised runs, with reproducible code on GitHub.",
+    ],
+    link: { label: "The code", href: "https://github.com/UJESH2K/AICTE---p1" },
+  },
+];
+
+export type Client = {
+  name: string;
+  what: string;
+  role: string;
+  year: string;
+  text: string;
+  points?: string[];
+  image?: string;
+  imageAlt?: string;
+  video?: string;
+  live?: string;
+  code?: string;
+  note?: string;
+};
+
+export const CLIENTS_INTRO = {
+  eyebrow: "Freelance & clients",
+  title: "Products and sites for people who use them.",
+  text: "Startups and small businesses: an AI tutor in production, a wellbeing platform, a resort and a merch store, each one designed, built and shipped end to end.",
+};
+
+export const CLIENTS: Client[] = [
+  {
+    name: "Edactly",
+    what: "An AI tutor that has read the whole syllabus",
+    role: "Freelance full-stack developer",
+    year: "2026 – now",
+    text: "Prompt in, lesson video out, for students in grades 1–12.",
+    points: [
+      "An AI pipeline in Python, Manim and Matplotlib that turns a natural-language prompt into an explainer video, grounded by RAG over the NCERT curriculum.",
+      "Deployed on AWS S3 and Lambda: a three-minute video in about five minutes, for roughly ₹7 of compute.",
+      "Authentication, user management and the APIs behind the platform's dashboards and content workflows.",
+    ],
+    image: "/media/site-edactly",
+    imageAlt: "The Edactly home page",
+    live: "https://beta.edactly.com/",
+  },
+  {
+    name: "NEXR",
+    what: "Workplace wellbeing, without the stigma",
+    role: "Website, design and build",
+    year: "2026",
+    text: "NEXR helps organisations remove the invisible barriers that stop employees from asking for support. The site walks visitors through it with a 3D guide.",
+    image: "/media/site-nexr",
+    imageAlt: "The NEXR site: 'Wellbeing, reimagined'",
+    video: "/reel/nexr.mp4",
+    live: "https://nex-alpha-six.vercel.app/",
+  },
+  {
+    name: "Radiant Resort",
+    what: "A calm address on Bannerghatta Road",
+    role: "Website, design and build",
+    year: "2026",
+    text: "Timber chalets, Ayurvedic wellness and dining on the southern edge of Bengaluru, with a slow, cinematic site to match and booking enquiries built in.",
+    image: "/media/site-resort",
+    imageAlt: "The Radiant Resort home page at dusk",
+    video: "/reel/resort.mp4",
+    live: "https://randientres.vercel.app",
+  },
+  {
+    name: "Print Perfect",
+    what: "Branded merch teams actually keep",
+    role: "Storefront, design and build",
+    year: "2026",
+    text: "A Bengaluru merch company's storefront: a catalogue of 120-plus products, bulk ordering, and a little guide that walks first-time buyers through an order.",
+    image: "/media/site-printperfect",
+    imageAlt: "The Print Perfect storefront",
+    live: "https://printprfect.vercel.app",
+  },
+  {
+    name: "DRYP",
+    what: "A storefront, end to end",
+    role: "Commerce build",
+    year: "2025",
+    text: "The full product, cart and checkout flow for an online store.",
+    code: "https://github.com/UJESH2K/DRYP-store",
+    note: "The live store is offline; the code is public.",
+  },
+];
+
+export type Lead = {
+  org: string;
+  role: string;
+  period: string;
+  text: string;
+  stat?: { value: string; label: string };
+};
+
+export const LEADERSHIP_INTRO = {
+  eyebrow: "Leadership & community",
+  title: "Running the room, not just sitting in it.",
+  text: "A code club that runs like a small company, a tech fest with a thousand applicants, and hackathons organised almost as often as entered.",
+  photos: [
+    { src: "/media/life-classroom", alt: "Ujesh running a session for a classroom of students" },
+    { src: "/media/life-group", alt: "A big group photo on a staircase after an event" },
+  ],
+};
+
+export const LEADERSHIP: Lead[] = [
+  {
+    org: "Code Club, Atria Institute of Technology",
+    role: "Technical lead",
+    period: "2023 – now",
+    text: "Code reviews, design sessions and mentoring from idea to deployment, plus real-time tools for college departments, including a live IPL-auction simulator.",
+    stat: { value: "200+", label: "members" },
+  },
+  {
+    org: "Vigyan Rang",
+    role: "Tech fest organiser",
+    period: "2024 – now",
+    text: "A ₹5L tech fest with QR-based registration and shortlisting, and five hackathons of 500-plus participants each.",
+    stat: { value: "1,000+", label: "applicants" },
+  },
+  {
+    org: "Google Developer Group On Campus",
+    role: "AI lead",
+    period: "2023 – 2024",
+    text: "Led the chapter's AI initiatives: technical sessions and project-based learning for students getting into applied ML.",
+  },
+  {
+    org: "LitmusChaos, Hacktoberfest 2025",
+    role: "Open-source contributor",
+    period: "Oct 2025",
+    text: "Seven accepted pull requests to the CNCF chaos-engineering project, in Go: Kubernetes resource handling and Helm chart logic.",
+    stat: { value: "7", label: "PRs merged" },
   },
 ];
 
@@ -1056,102 +1344,12 @@ export const ABOUT = {
   ],
   portrait: "/media/life-podium",
   portraitAlt: "Ujesh speaking at a podium",
-  reel: [
-    { src: "/reel/nexr.mp4", label: "NEXR · client site" },
-    { src: "/reel/resort.mp4", label: "Resort booking · client site" },
-    { src: "/reel/inceptio.mp4", label: "Inceptio · client build" },
-  ],
   education: {
     school: "Atria Institute of Technology (VTU), Bengaluru",
     degree: "B.E. Computer Science and Engineering",
     period: "2023 – present",
   },
 };
-
-export type Role = {
-  num: string;
-  company: string;
-  role: string;
-  period: string;
-  place: string;
-  sub: string;
-  points: string[];
-  image: string;
-  imageAlt: string;
-  bg: string;
-};
-
-export const ROLES_INTRO = {
-  eyebrow: "Experience",
-  title: "Where I've shipped.",
-  text: "Two startups, an ML internship and a campus club that runs like a small company. Each with real people on the other end.",
-};
-
-export const ROLES: Role[] = [
-  {
-    num: "01",
-    company: "EaseMed",
-    role: "Full Stack Developer Intern",
-    period: "Jan – Jun 2026",
-    place: "Bengaluru",
-    sub: "Sole engineer on outbreak prediction.",
-    points: [
-      "Built and shipped a disease-outbreak prediction model correlating global trade data with WHO and government health APIs to generate inventory-risk guardrails.",
-      "Serverless ingestion pipeline in Node.js and Supabase with a Hugging Face-hosted parser, validated with 10–20 concurrent users.",
-      "WebSocket messaging between hospitals and vendors, a React/Next.js frontend, auth and role-based access end to end; inference services on EC2, S3, Nginx, PM2 and Vercel.",
-    ],
-    image: "/media/work-easemed",
-    imageAlt: "The EaseMed landing page",
-    bg: "#1c0703",
-  },
-  {
-    num: "02",
-    company: "Edactly",
-    role: "Freelance Full Stack Developer",
-    period: "2026 – present",
-    place: "Remote",
-    sub: "Prompt in, lesson video out.",
-    points: [
-      "AI pipeline in Python, Manim and Matplotlib that generates explainer videos from natural-language prompts, grounded by RAG over NCERT grades 1–12.",
-      "Deployed on AWS S3 and Lambda: a three-minute video in about five minutes, at roughly ₹7 of compute.",
-      "Authentication, user management and the APIs behind the platform's dashboards and content workflows.",
-    ],
-    image: "/media/work-edactly-3",
-    imageAlt: "An Edactly progress map: 'Your map. Your pace.'",
-    bg: "#3a0e05",
-  },
-  {
-    num: "03",
-    company: "Hitachi",
-    role: "Machine Learning Intern",
-    period: "2025 · 3 months",
-    place: "India",
-    sub: "From camera to classifier.",
-    points: [
-      "Led a student team building a ~600-image dataset for a bird-species computer-vision project.",
-      "Captured the images myself, labelled them in Label Studio, and owned model development and pipeline design end to end.",
-    ],
-    image: "/media/work-hitachi-train",
-    imageAlt: "Training logs from the bird-species detection model",
-    bg: "#5c1606",
-  },
-  {
-    num: "04",
-    company: "Code Club & Vigyan Rang",
-    role: "Technical Lead · Fest Organiser",
-    period: "2024 – present",
-    place: "Atria Institute of Technology",
-    sub: "200+ members, 1,000+ applicants.",
-    points: [
-      "Lead full-stack initiatives for a 200-plus member club: code reviews, design sessions and mentoring from idea to deployment.",
-      "Organised a ₹5L tech fest with QR-based registration and shortlisting for 1,000+ applicants and five hackathons of 500+ participants each.",
-      "Built real-time tools for several departments, including a live IPL-auction simulator.",
-    ],
-    image: "/media/life-crowd",
-    imageAlt: "A large group photo of hackathon participants",
-    bg: "#7f2008",
-  },
-];
 
 export type Win = {
   name: string;
@@ -1171,7 +1369,7 @@ export const WINS: Win[] = [
   {
     name: "Denova",
     result: "Winner · Solana track",
-    detail: "International blockchain hackathon.",
+    detail: "International blockchain hackathon, with GitPay.",
     image: "/media/win-denova",
     imageAlt: "Presenting at the Denova hackathon",
   },
@@ -1434,24 +1632,26 @@ export type RobotCorner = "br" | "bl" | "tr" | "tl";
 
 /**
  * What the robot says as each section reaches the middle of the screen, and
- * where it stands while it says it. Corners are chosen per section to keep
- * clear of that section's heading and text, and alternate so it travels.
+ * where it stands while it says it. It rests in the bottom corners, clear of
+ * every heading, alternating sides so it travels (over the top) as you read.
  */
 export const ROBOT_LINES: Record<string, { line: string; mood?: RobotMood; corner: RobotCorner }> = {
-  signals: { line: "I'll follow you down. Click me any time for shortcuts.", mood: "wave", corner: "tl" },
-  story: { line: "The short version: eight chapters, all true.", corner: "tr" },
+  signals: { line: "I'll follow you down. Click me any time for shortcuts.", mood: "wave", corner: "br" },
+  story: { line: "The short version: eight chapters, all true.", corner: "bl" },
   build: { line: "Here's what he builds. Keep scrolling, the cards fly past.", corner: "br" },
-  work: { line: "The projects! One won Inception, one became a paper.", corner: "bl" },
-  about: { line: "That's him on stage. He talks faster than I compute.", corner: "tr" },
-  experience: { line: "Where he's worked: real users, real deadlines.", corner: "br" },
-  wins: { line: "Seven wins out of fifty-plus hackathons. I counted twice.", mood: "cheer", corner: "tr" },
+  work: { line: "The projects! Filter them: hackathon, research or side project.", corner: "bl" },
+  internships: { line: "Three internships. Real users, real deadlines.", corner: "br" },
+  freelance: { line: "Client work: real sites for real clients.", corner: "bl" },
+  about: { line: "That's him on stage. He talks faster than I compute.", corner: "br" },
+  leadership: { line: "He runs a club of 200. I run on batteries.", corner: "bl" },
+  wins: { line: "Seven wins out of fifty-plus hackathons. I counted twice.", mood: "cheer", corner: "br" },
   wall: { line: "The photo wall! Hover a picture, it ripples.", corner: "bl" },
-  research: { line: "GradMesh goes to IMPACT-2027 this January.", corner: "tr" },
+  research: { line: "GradMesh goes to IMPACT-2027 this January.", corner: "br" },
   feed: { line: "For the day-to-day, these are his profiles.", corner: "bl" },
-  offclock: { line: "Marathons and football. I mostly hover.", corner: "tr" },
+  offclock: { line: "Marathons and football. I mostly hover.", corner: "br" },
   faq: { line: "Short on time? The quick answers are here.", corner: "bl" },
   contact: { line: "That's the tour! His inbox is right here.", mood: "wave", corner: "br" },
-};
+}
 
 export const ROBOT_IDLE_LINES = [
   "Still here if you need me.",
@@ -1465,7 +1665,6 @@ export const EASTER_EGGS = {
   cheatCode: "Cheat code accepted. Infinite curiosity unlocked.",
   name: "Hey, that's my human!",
   dizzy: "Whoa. Okay, okay, I'm dizzy.",
-  sleep: "Zzz…",
   wake: "Oh! You're back.",
   console: [
     "Hey, you opened the console. You're my kind of visitor.",
@@ -1478,8 +1677,9 @@ export const EASTER_EGGS = {
 export const ROBOT_MENU = {
   prompt: "Where to?",
   stops: [
-    { label: "Work", href: "#work" },
-    { label: "Experience", href: "#experience" },
+    { label: "Projects", href: "#work" },
+    { label: "Internships", href: "#internships" },
+    { label: "Freelance", href: "#freelance" },
     { label: "Wins", href: "#wins" },
     { label: "Research", href: "#research" },
     { label: "Contact", href: "#contact" },

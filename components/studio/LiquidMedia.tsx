@@ -14,10 +14,12 @@ import { useEffect } from "react";
  *     context per photo would leave most of a big photo wall flat.
  *   - Photos get a canvas as they near the viewport and give it back when
  *     they leave; textures are capped at 1024px and uploaded two a frame.
- *   - One rAF loop draws only while something is moving; at rest it draws
- *     nothing.
- *   - The <img> stays in place underneath and is only hidden once its
- *     canvas has drawn, so if WebGL is unavailable the photos just show.
+ *   - One rAF loop draws only while something is moving, at a reduced
+ *     resolution the motion hides. The canvas is shown only while a photo is
+ *     actually bending or rippling; at rest the real <img> is back on top,
+ *     sharp, and costs nothing.
+ *   - Touch screens skip the effect: there is no hover to show, and redrawing
+ *     every photo on every scroll frame is what made phones stutter.
  */
 
 const VERT = `
@@ -78,15 +80,19 @@ type Slot = {
   hover: number;
   hoverT: number;
   mouse: [number, number];
-  dirty: boolean;
+  /** The canvas is on top of the photo right now. */
+  shown: boolean;
 };
+
+/** Canvas resolution relative to the photo's CSS size while it moves. */
+const RES = 0.7;
 
 /** Longest side a texture is uploaded at; photos never show bigger. */
 const MAX_TEX = 1024;
 
 export default function LiquidMedia() {
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce), (pointer: coarse)").matches) return;
 
     // ── The one shared renderer ─────────────────────────────────────────
     const glc = document.createElement("canvas");
@@ -121,7 +127,7 @@ export default function LiquidMedia() {
     const pending = new Set<Slot>();
     const UPLOADS_PER_FRAME = 2;
     let lost = false;
-    const dpr = () => Math.min(window.devicePixelRatio || 1, 1.5);
+    const dpr = () => Math.min(window.devicePixelRatio || 1, 1.5) * RES;
 
     const sizeSlot = (s: Slot) => {
       const w = Math.max(2, Math.round(s.target.clientWidth * dpr()));
@@ -129,7 +135,6 @@ export default function LiquidMedia() {
       if (s.canvas.width !== w || s.canvas.height !== h) {
         s.canvas.width = w;
         s.canvas.height = h;
-        s.dirty = true;
       }
     };
 
@@ -161,7 +166,6 @@ export default function LiquidMedia() {
       s.imgW = img.naturalWidth;
       s.imgH = img.naturalHeight;
       s.ready = true;
-      s.dirty = true;
     };
 
     const attach = (target: HTMLElement) => {
@@ -171,12 +175,13 @@ export default function LiquidMedia() {
       const canvas = document.createElement("canvas");
       canvas.className = "liquid-canvas";
       canvas.setAttribute("aria-hidden", "true");
+      canvas.style.visibility = "hidden";
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
       img.after(canvas);
       const s: Slot = {
         target, img, canvas, ctx, tex: null, imgW: 1, imgH: 1,
-        ready: false, hover: 0, hoverT: 0, mouse: [0.5, 0.5], dirty: true,
+        ready: false, hover: 0, hoverT: 0, mouse: [0.5, 0.5], shown: false,
       };
       slots.set(target, s);
       ro.observe(target);
@@ -232,6 +237,8 @@ export default function LiquidMedia() {
       queued = requestAnimationFrame(() => {
         queued = 0;
         scan();
+        // Photos removed from the page (a filter changed) give their canvas back.
+        for (const t of Array.from(slots.keys())) if (!t.isConnected) detach(t);
       });
     });
     mo.observe(document.body, { childList: true, subtree: true });
@@ -282,7 +289,16 @@ export default function LiquidMedia() {
         if (!s.ready || !s.tex) continue;
         s.hover += (s.hoverT - s.hover) * 0.08;
         if (s.hover < 0.002) s.hover = 0;
-        if (vel === 0 && s.hover === 0 && !s.dirty) continue;
+        const active = vel !== 0 || s.hover > 0;
+        if (!active) {
+          // At rest: hand back to the sharp photo.
+          if (s.shown) {
+            s.shown = false;
+            s.canvas.style.visibility = "hidden";
+            s.img.classList.remove("is-liquid");
+          }
+          continue;
+        }
         const w = s.canvas.width;
         const h = s.canvas.height;
         // Grow the shared drawing buffer when a bigger photo needs it.
@@ -301,8 +317,9 @@ export default function LiquidMedia() {
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         // The viewport sits at the bottom-left of the drawing buffer.
         s.ctx.drawImage(glc, 0, glc.height - h, w, h, 0, 0, w, h);
-        if (s.dirty) {
-          s.dirty = false;
+        if (!s.shown) {
+          s.shown = true;
+          s.canvas.style.visibility = "visible";
           s.img.classList.add("is-liquid");
         }
       }

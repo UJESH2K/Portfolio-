@@ -1,77 +1,14 @@
-"use client";
-
-import { useEffect, useRef, useState } from "react";
-import { ABOUT, PROFILE } from "@/lib/content";
-import { Cta, SplitWords } from "../primitives";
+import { ABOUT } from "@/lib/content";
+import { RESUME } from "@/lib/resume";
+import { Cta, Img, SplitWords } from "../primitives";
 import Scramble from "../Scramble";
 
 /**
- * The short version: a two-line heading, then a reel of screen recordings
- * beside a few paragraphs. Videos only load and play while on screen, and
- * advance by themselves; the tabs jump straight to one.
+ * The short version: a two-line heading, a few paragraphs and the degree on
+ * one side, a big photo of him on stage on the other. (Client screen
+ * recordings live with the client work, in #freelance.)
  */
 export default function About() {
-  const [idx, setIdx] = useState(0);
-  const [inView, setInView] = useState(false);
-  const box = useRef<HTMLDivElement>(null);
-  const vids = useRef<Array<HTMLVideoElement | null>>([]);
-  const bars = useRef<Array<HTMLElement | null>>([]);
-
-  useEffect(() => {
-    const el = box.current;
-    if (!el) return;
-    const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { threshold: 0.25 });
-    io.observe(el);
-    // Start fetching and decoding the first clip about a screen early, so
-    // the video decoder spins up off screen rather than mid-scroll.
-    const early = new IntersectionObserver(
-      ([e]) => {
-        if (!e.isIntersecting) return;
-        early.disconnect();
-        const v = vids.current[0];
-        if (v && v.preload !== "auto") {
-          v.preload = "auto";
-          v.load();
-        }
-      },
-      { rootMargin: "100% 0px 100% 0px" }
-    );
-    early.observe(el);
-    return () => {
-      io.disconnect();
-      early.disconnect();
-    };
-  }, []);
-
-  useEffect(() => {
-    vids.current.forEach((v, i) => {
-      if (!v) return;
-      if (inView && i === idx) {
-        if (v.preload !== "auto") v.preload = "auto";
-        v.currentTime = 0;
-        void v.play().catch(() => {});
-      } else v.pause();
-    });
-  }, [idx, inView]);
-
-  // Progress bar + auto-advance, driven by the playing video's own clock.
-  useEffect(() => {
-    if (!inView) return;
-    let raf = 0;
-    const loop = () => {
-      raf = requestAnimationFrame(loop);
-      const v = vids.current[idx];
-      const bar = bars.current[idx];
-      if (!v || !bar || !v.duration) return;
-      const limit = Math.min(v.duration, 12);
-      const p = Math.min(1, v.currentTime / limit);
-      bar.style.transform = `scaleX(${p})`;
-      if (p >= 1) setIdx((i) => (i + 1) % ABOUT.reel.length);
-    };
-    loop();
-    return () => cancelAnimationFrame(raf);
-  }, [idx, inView]);
-
   return (
     <section id="about" className="about" data-cue="about" aria-labelledby="about-title">
       <div className="wrap">
@@ -96,41 +33,15 @@ export default function About() {
               {ABOUT.education.school} · {ABOUT.education.period}
             </div>
             <div className="about__row">
-              <Cta href={PROFILE.resumeUrl} width={230} download>
-                Download résumé
+              <Cta href={RESUME.href} width={260} download={RESUME.download} external={RESUME.external}>
+                {RESUME.label}
               </Cta>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="about__portrait" src={`${ABOUT.portrait}-800.webp`} alt={ABOUT.portraitAlt} loading="lazy" />
             </div>
           </div>
 
-          <div className="about__box" ref={box}>
-            {ABOUT.reel.map((r, i) => (
-              <video
-                key={r.src}
-                ref={(n) => {
-                  vids.current[i] = n;
-                }}
-                className={i === idx ? "is-on" : ""}
-                src={r.src}
-                muted
-                playsInline
-                loop={false}
-                preload={i === 0 ? "metadata" : "none"}
-                aria-label={r.label}
-              />
-            ))}
-            <div className="about__reelnav">
-              {ABOUT.reel.map((r, i) => (
-                <button key={r.src} type="button" className={i === idx ? "is-on" : ""} onClick={() => setIdx(i)}>
-                  {r.label}
-                  <i ref={(n) => {
-                  bars.current[i] = n;
-                }} />
-                </button>
-              ))}
-            </div>
-          </div>
+          <figure className="about__photo" data-liquid="">
+            <Img src={ABOUT.portrait} alt={ABOUT.portraitAlt} sizes="(max-width: 809px) 92vw, 48vw" />
+          </figure>
         </div>
       </div>
     </section>

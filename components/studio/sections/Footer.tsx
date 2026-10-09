@@ -1,6 +1,13 @@
-import { FOOTER, PROFILE, SITE_NAV, SOCIALS, WORK, isMissing } from "@/lib/content";
+import { CLIENTS, FOOTER, PROFILE, SITE_NAV, SOCIALS, WORK, isMissing } from "@/lib/content";
 import type { CSSProperties } from "react";
+import { RESUME } from "@/lib/resume";
 import { ArrowIcon } from "../primitives";
+
+/** The latest things worth opening, each linked to the real thing. */
+const LATEST = [
+  ...WORK.filter((w) => w.featured || w.live).slice(0, 3).map((w) => ({ title: w.title, href: (w.live ?? w.code) as string })),
+  ...CLIENTS.filter((c) => c.live).slice(0, 2).map((c) => ({ title: c.name, href: c.live as string })),
+];
 
 export default function Footer() {
   const socials = SOCIALS.filter((s) => s.id !== "email" && !isMissing(s.href));
@@ -47,9 +54,11 @@ export default function Footer() {
           <div className="footer__col">
             <p className="footer__h">Latest work</p>
             <ul>
-              {WORK.slice(0, 5).map((w) => (
-                <li key={w.id}>
-                  <a href="#work">{w.title}</a>
+              {LATEST.map((w) => (
+                <li key={w.href}>
+                  <a href={w.href} target="_blank" rel="noopener noreferrer">
+                    {w.title} ↗
+                  </a>
                 </li>
               ))}
             </ul>
@@ -62,8 +71,13 @@ export default function Footer() {
               </li>
               <li>{PROFILE.location}</li>
               <li>
-                <a href={PROFILE.resumeUrl} download>
-                  Résumé (PDF)
+                <a
+                  href={RESUME.href}
+                  download={RESUME.download || undefined}
+                  target={RESUME.external ? "_blank" : undefined}
+                  rel={RESUME.external ? "noopener noreferrer" : undefined}
+                >
+                  {RESUME.short}
                 </a>
               </li>
               {FOOTER.credits.map((c) => (

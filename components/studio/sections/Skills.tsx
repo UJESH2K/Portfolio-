@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
-import { PROFILE, SKILL_GROUPS } from "@/lib/content";
+import { SKILL_GROUPS } from "@/lib/content";
+import { RESUME } from "@/lib/resume";
 import { Cta, Eyebrow, SplitWords } from "../primitives";
 
 export default function Skills() {
@@ -13,8 +14,8 @@ export default function Skills() {
               <SplitWords text="Tools I reach for." />
             </h2>
           </div>
-          <Cta href={PROFILE.resumeUrl} width={280} download>
-            Download résumé
+          <Cta href={RESUME.href} width={300} download={RESUME.download} external={RESUME.external}>
+            {RESUME.label}
           </Cta>
         </div>
         <div className="skills__grid">

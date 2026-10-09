@@ -1,63 +1,113 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { PROFILE, SOCIALS, WORK, WORK_INTRO, type WorkCard } from "@/lib/content";
+import { useState, type CSSProperties } from "react";
+import { PROFILE, SOCIALS, WORK, WORK_FILTERS, WORK_INTRO, type WorkItem, type WorkKind } from "@/lib/content";
 import { ArrowIcon, Cta, Eyebrow, Img, SplitWords } from "../primitives";
 import Scramble from "../Scramble";
-import { BlockPartyVisual, GradMeshVisual } from "./WorkVisual";
 
-function Visual({ card }: { card: WorkCard }) {
-  if (card.visual === "gradmesh") return <GradMeshVisual />;
-  if (card.visual === "blockparty") return <BlockPartyVisual />;
-  if (card.image)
-    return (
-      <Img
-        src={card.image}
-        alt={card.imageAlt ?? card.title}
-        sizes={card.span === "full" ? "(max-width: 809px) 92vw, 80vw" : "(max-width: 809px) 92vw, 55vw"}
-      />
-    );
-  return null;
+const KIND_LABEL: Record<WorkKind, string> = {
+  hackathon: "Hackathon build",
+  research: "Research",
+  side: "Side project",
+};
+
+/** A light typographic cover for work without a screenshot. */
+function Cover({ item }: { item: WorkItem }) {
+  if (!item.cover) return null;
+  return (
+    <div className="pcover" aria-hidden="true">
+      <span className="pcover__kind">{KIND_LABEL[item.kind]}</span>
+      <span className="pcover__stat">{item.cover.stat}</span>
+      <span className="pcover__label">{item.cover.label}</span>
+    </div>
+  );
+}
+
+function Card({ item, index }: { item: WorkItem; index: number }) {
+  const main = item.live ?? item.code;
+  // A short demo clip plays over the screenshot while the card is hovered.
+  const play = (e: React.PointerEvent<HTMLElement>, on: boolean) => {
+    const v = e.currentTarget.querySelector("video");
+    if (!v) return;
+    if (on) {
+      if (v.preload !== "auto") v.preload = "auto";
+      void v.play().catch(() => {});
+    } else v.pause();
+  };
+  const media = (
+    <figure className="pcard__media" data-liquid={item.image ? "" : undefined}>
+      {item.image ? (
+        <Img
+          src={item.image}
+          alt={item.imageAlt ?? item.title}
+          sizes={item.featured ? "(max-width: 809px) 92vw, 46vw" : "(max-width: 809px) 92vw, 30vw"}
+        />
+      ) : (
+        <Cover item={item} />
+      )}
+      {item.video ? <video className="pcard__video" src={item.video} muted loop playsInline preload="none" aria-hidden="true" /> : null}
+    </figure>
+  );
+  return (
+    <li
+      className={`pcard${item.featured ? " pcard--feature" : ""}`}
+      style={{ "--d": `${(index % 3) * 0.06}s` } as CSSProperties}
+      onPointerEnter={(e) => play(e, true)}
+      onPointerLeave={(e) => play(e, false)}
+    >
+      {main ? (
+        <a className="pcard__mediaLink" href={main} target="_blank" rel="noopener noreferrer" tabIndex={-1} aria-hidden="true">
+          {media}
+        </a>
+      ) : (
+        media
+      )}
+      <div className="pcard__body">
+        <p className="pcard__kicker">
+          <span className={`pcard__kind pcard__kind--${item.kind}`}>{KIND_LABEL[item.kind]}</span>
+          <span>{item.context}</span>
+        </p>
+        <h3 className="pcard__title">
+          {item.title}
+          <span className="pcard__headline">{item.headline}</span>
+        </h3>
+        <p className="pcard__text">{item.text}</p>
+        <ul className="pcard__stack" aria-label="Built with">
+          {item.stack.map((t) => (
+            <li key={t}>{t}</li>
+          ))}
+        </ul>
+        <div className="pcard__links">
+          {item.live ? (
+            <a className="plink plink--solid" href={item.live} target="_blank" rel="noopener noreferrer">
+              Live site <ArrowIcon />
+            </a>
+          ) : null}
+          {item.code ? (
+            <a className="plink" href={item.code} target="_blank" rel="noopener noreferrer">
+              Code <ArrowIcon />
+            </a>
+          ) : null}
+          {!item.live && !item.code ? (
+            <a className="plink" href="#contact">
+              Ask me about it <ArrowIcon />
+            </a>
+          ) : null}
+        </div>
+      </div>
+    </li>
+  );
 }
 
 /**
- * Selected work: an asymmetric grid where a pill reading "View project"
- * replaces the cursor over each card. Cards without a public link still get
- * the hover treatment but read "Ask me about it" and jump to contact.
+ * Projects: the index of things built, filterable by kind, with live links
+ * and code where they exist. Internships and client work have their own
+ * sections (#internships, #freelance), so nothing is listed twice.
  */
 export default function SelectedWork() {
-  const cursor = useRef<HTMLDivElement>(null);
-  const label = useRef<HTMLSpanElement>(null);
+  const [kind, setKind] = useState<WorkKind | "all">("all");
   const github = SOCIALS.find((s) => s.id === "github")?.href ?? "https://github.com/UJESH2K";
-
-  useEffect(() => {
-    const el = cursor.current;
-    if (!el || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
-    let x = -200;
-    let y = -200;
-    let tx = -200;
-    let ty = -200;
-    let raf = 0;
-    const loop = () => {
-      raf = requestAnimationFrame(loop);
-      x += (tx - x) * 0.2;
-      y += (ty - y) * 0.2;
-      el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-    };
-    loop();
-    const onMove = (e: PointerEvent) => {
-      tx = e.clientX;
-      ty = e.clientY;
-      const card = (e.target as HTMLElement).closest?.("[data-card]") as HTMLElement | null;
-      el.classList.toggle("is-on", !!card);
-      if (card && label.current) label.current.textContent = card.dataset.card ?? "View project";
-    };
-    window.addEventListener("pointermove", onMove, { passive: true });
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("pointermove", onMove);
-    };
-  }, []);
+  const shown = WORK.filter((w) => kind === "all" || w.kind === kind);
 
   return (
     <section id="work" className="work" data-cue="work" aria-labelledby="work-title">
@@ -74,49 +124,22 @@ export default function SelectedWork() {
           <Scramble as="p" className="lede" text={WORK_INTRO.text} duration={1300} />
         </div>
 
-        <ol className="work__grid">
-          {WORK.map((w, i) => {
-            const external = !!w.href;
-            const href = w.href ?? "#contact";
+        <div className="work__filters" role="group" aria-label="Show projects by kind">
+          {WORK_FILTERS.map((f) => {
+            const count = f.id === "all" ? WORK.length : WORK.filter((w) => w.kind === f.id).length;
             return (
-              <li key={w.id} className={`wcard wcard--${w.span} rv`} data-rv>
-                <a
-                  className="wcard__link"
-                  href={href}
-                  target={external ? "_blank" : undefined}
-                  rel={external ? "noopener noreferrer" : undefined}
-                  data-card={external ? w.linkLabel ?? "View project" : "Ask me about it"}
-                  aria-label={`${w.title}: ${w.headline}`}
-                >
-                  <figure className="wcard__fig" data-liquid={w.image && !w.visual ? "" : undefined}>
-                    <Visual card={w} />
-                    <figcaption className="wcard__tags">
-                      {w.tags.map((t) => (
-                        <span key={t} className="wcard__tag">
-                          {t}
-                        </span>
-                      ))}
-                    </figcaption>
-                  </figure>
-                  <div className="wcard__art">
-                    <span className="wcard__dot" aria-hidden="true" />
-                    <div>
-                      <span className="wcard__kicker">
-                        {String(i + 1).padStart(2, "0")} / {String(WORK.length).padStart(2, "0")} · {w.context}
-                      </span>
-                      <h3 className="wcard__title">
-                        {w.title}: {w.headline}
-                      </h3>
-                      <p className="wcard__text">{w.text}</p>
-                    </div>
-                    <span className="wcard__ic" aria-hidden="true">
-                      <ArrowIcon />
-                    </span>
-                  </div>
-                </a>
-              </li>
+              <button key={f.id} type="button" className="chip" aria-pressed={kind === f.id} onClick={() => setKind(f.id)}>
+                {f.label}
+                <sup>{count}</sup>
+              </button>
             );
           })}
+        </div>
+
+        <ol className={`work__grid${kind === "all" ? "" : " is-filtered"}`} key={kind}>
+          {shown.map((w, i) => (
+            <Card key={w.id} item={w} index={i} />
+          ))}
         </ol>
 
         <div className="work__cta rv" data-rv>
@@ -124,13 +147,6 @@ export default function SelectedWork() {
             {`${PROFILE.publicRepos}+ more on GitHub`}
           </Cta>
         </div>
-      </div>
-
-      <div className="wcursor" ref={cursor} aria-hidden="true">
-        <span className="wcursor__in">
-          <span ref={label}>View project</span>
-          <ArrowIcon />
-        </span>
       </div>
     </section>
   );

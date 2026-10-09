@@ -127,13 +127,15 @@ export default function Chrome() {
             <div>
               <p className="menu__rise">Recent work</p>
               <ul>
-                {WORK.slice(0, 4).map((w, i) => (
-                  <li key={w.id} className="menu__rise" style={{ "--d": `${0.1 + i * 0.05}s` } as CSSProperties}>
-                    <a href="#work" onClick={navigate("#work")} tabIndex={menuOpen ? 0 : -1}>
-                      {w.title} [{w.tags[0]}]
-                    </a>
-                  </li>
-                ))}
+                {WORK.filter((w) => w.live || w.code)
+                  .slice(0, 4)
+                  .map((w, i) => (
+                    <li key={w.id} className="menu__rise" style={{ "--d": `${0.1 + i * 0.05}s` } as CSSProperties}>
+                      <a href={w.live ?? w.code} target="_blank" rel="noopener noreferrer" tabIndex={menuOpen ? 0 : -1}>
+                        {w.title} ↗
+                      </a>
+                    </li>
+                  ))}
               </ul>
             </div>
             <div>

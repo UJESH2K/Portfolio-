@@ -71,7 +71,9 @@ export default function EasterEggs() {
         const st = useRobot.getState();
         if (!st.introDone || st.hidden || st.speech?.kind === "menu") return arm();
         asleep = true;
-        st.say(EASTER_EGGS.sleep, { mood: "sleep" });
+        // No words: the robot just nods off, Z's and all (SleepZ).
+        st.hush();
+        st.react("sleep");
       }, SLEEP_AFTER);
     };
     const activity = () => {
