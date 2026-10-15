@@ -742,9 +742,9 @@ export const INTERESTS: Interest[] = [
  * not the link target itself.
  */
 export const SITE_NAV: { label: string; href: string; from?: string }[] = [
-  { label: "Work", href: "#work" },
   { label: "Internships", href: "#internships" },
   { label: "Freelance", href: "#freelance" },
+  { label: "Work", href: "#work" },
   { label: "Leadership", href: "#leadership" },
   { label: "Wins", href: "#wins" },
   { label: "Research", href: "#research" },

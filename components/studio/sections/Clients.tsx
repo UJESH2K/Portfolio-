@@ -56,7 +56,7 @@ export default function Clients() {
   }, [hot]);
 
   return (
-    <section id="freelance" className="clients" data-cue="freelance" aria-labelledby="clients-title">
+    <section id="freelance" className="clients theme-cream" data-cue="freelance" aria-labelledby="clients-title">
       <div className="wrap">
         <div className="clients__head">
           <Eyebrow>{CLIENTS_INTRO.eyebrow}</Eyebrow>

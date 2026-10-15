@@ -1,55 +1,55 @@
-import type { CSSProperties } from "react";
 import { LEADERSHIP, LEADERSHIP_INTRO } from "@/lib/content";
+import HTrack from "../HTrack";
 import { Eyebrow, Img, SplitWords } from "../primitives";
 
 /**
- * Leadership and community: the club, the fest, the GDG chapter and open
- * source, each with the one number that says how big it was, beside two
- * photos from the room.
+ * Leadership and community as a horizontal run: the heading, a photo, the
+ * roles as cards (each with the one number that says how big it was), and a
+ * second photo, sliding past as you scroll down.
  */
 export default function Leadership() {
+  const [first, second] = LEADERSHIP_INTRO.photos;
   return (
     <section id="leadership" className="lead" data-cue="leadership" aria-labelledby="lead-title">
-      <div className="wrap">
-        <div className="lead__head">
+      <HTrack label="Leadership & community">
+        <div className="hpanel hpanel--intro">
           <Eyebrow>{LEADERSHIP_INTRO.eyebrow}</Eyebrow>
           <h2 id="lead-title" className="h2" data-rv>
             <SplitWords text={LEADERSHIP_INTRO.title} />
           </h2>
-          <p className="lede rv" data-rv>
-            {LEADERSHIP_INTRO.text}
+          <p className="lede">{LEADERSHIP_INTRO.text}</p>
+          <p className="hpanel__hint" aria-hidden="true">
+            Keep scrolling →
           </p>
         </div>
-
-        <div className="lead__grid">
-          <div className="lead__photos">
-            {LEADERSHIP_INTRO.photos.map((ph, i) => (
-              <figure key={ph.src} className={`lead__fig lead__fig--${i} rv`} data-rv data-liquid="">
-                <Img src={ph.src} alt={ph.alt} sizes="(max-width: 809px) 92vw, 36vw" />
-              </figure>
-            ))}
-          </div>
-          <ul className="lead__list">
-            {LEADERSHIP.map((l, i) => (
-              <li key={l.org} className="lrow rv" data-rv style={{ "--d": `${i * 0.06}s` } as CSSProperties}>
-                <div className="lrow__top">
-                  <p className="lrow__role">
-                    {l.role} <span>· {l.period}</span>
-                  </p>
-                  {l.stat ? (
-                    <p className="lrow__stat">
-                      <b>{l.stat.value}</b>
-                      {l.stat.label}
-                    </p>
-                  ) : null}
-                </div>
-                <h3 className="lrow__org">{l.org}</h3>
-                <p className="lrow__text">{l.text}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+        {first ? (
+          <figure className="hphoto hphoto--tall" data-imgfx data-rv>
+            <Img src={first.src} alt={first.alt} sizes="(max-width: 809px) 92vw, 30vw" />
+          </figure>
+        ) : null}
+        {LEADERSHIP.map((l) => (
+          <article key={l.org} className="hcard lcard">
+            <div className="hcard__body">
+              <p className="lrow__role">
+                {l.role} <span>· {l.period}</span>
+              </p>
+              {l.stat ? (
+                <p className="lcard__stat">
+                  <b>{l.stat.value}</b>
+                  {l.stat.label}
+                </p>
+              ) : null}
+              <h3 className="hcard__title">{l.org}</h3>
+              <p className="lrow__text">{l.text}</p>
+            </div>
+          </article>
+        ))}
+        {second ? (
+          <figure className="hphoto hphoto--wide" data-imgfx data-rv>
+            <Img src={second.src} alt={second.alt} sizes="(max-width: 809px) 92vw, 44vw" />
+          </figure>
+        ) : null}
+      </HTrack>
     </section>
   );
 }

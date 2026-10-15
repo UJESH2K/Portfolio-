@@ -3,7 +3,6 @@ import RevealObserver from "@/components/studio/RevealObserver";
 import Preloader from "@/components/studio/Preloader";
 import Chrome from "@/components/studio/Chrome";
 import Hero from "@/components/studio/Hero";
-import LiquidMedia from "@/components/studio/LiquidMedia";
 import EasterEggs from "@/components/studio/EasterEggs";
 import Delight from "@/components/studio/Delight";
 import RobotLayer from "@/components/studio/robot/RobotLayer";
@@ -38,7 +37,6 @@ export default async function Home() {
       <Preloader />
       <Chrome />
       <RobotLayer />
-      <LiquidMedia />
       <EasterEggs />
       <Delight />
 
@@ -48,10 +46,10 @@ export default async function Home() {
         <Statement />
         <Story />
         <BuildOrbit />
-        <Skills />
-        <SelectedWork />
         <Internships />
         <Clients />
+        <SelectedWork />
+        <Skills />
         <About />
         <Leadership />
         <Wins />

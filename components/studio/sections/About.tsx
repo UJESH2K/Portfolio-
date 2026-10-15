@@ -10,7 +10,7 @@ import Scramble from "../Scramble";
  */
 export default function About() {
   return (
-    <section id="about" className="about" data-cue="about" aria-labelledby="about-title">
+    <section id="about" className="about theme-orange" data-cue="about" aria-labelledby="about-title">
       <div className="wrap">
         <h2 id="about-title" className="about__h2" data-rv>
           {ABOUT.title.map((l, i) => (
@@ -39,7 +39,7 @@ export default function About() {
             </div>
           </div>
 
-          <figure className="about__photo" data-liquid="">
+          <figure className="about__photo" data-imgfx data-rv>
             <Img src={ABOUT.portrait} alt={ABOUT.portraitAlt} sizes="(max-width: 809px) 92vw, 48vw" />
           </figure>
         </div>

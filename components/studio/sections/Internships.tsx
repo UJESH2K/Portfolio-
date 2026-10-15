@@ -1,60 +1,54 @@
-import type { CSSProperties } from "react";
 import { INTERNSHIPS, INTERNSHIPS_INTRO } from "@/lib/content";
+import HTrack from "../HTrack";
 import { ArrowIcon, Eyebrow, Img, SplitWords } from "../primitives";
 
 /**
- * Internships, one row each: who and when on the left, what got built in
- * the middle, a picture from the work on the right. Plain document flow:
- * nothing is pinned, so no row ever covers another or its image.
+ * Internships, on dark green, as a horizontal run: the heading, then one card
+ * per internship sliding in from the right as you scroll down.
  */
 export default function Internships() {
   return (
-    <section id="internships" className="intern" data-cue="internships" aria-labelledby="intern-title">
-      <div className="wrap">
-        <div className="intern__head">
+    <section id="internships" className="intern theme-green" data-cue="internships" aria-labelledby="intern-title">
+      <HTrack label="Internships">
+        <div className="hpanel hpanel--intro">
           <Eyebrow>{INTERNSHIPS_INTRO.eyebrow}</Eyebrow>
           <h2 id="intern-title" className="h2" data-rv>
             <SplitWords text={INTERNSHIPS_INTRO.title} />
           </h2>
-          <p className="lede rv" data-rv>
-            {INTERNSHIPS_INTRO.text}
+          <p className="lede">{INTERNSHIPS_INTRO.text}</p>
+          <p className="hpanel__hint" aria-hidden="true">
+            Keep scrolling →
           </p>
         </div>
-
-        <ol className="intern__list">
-          {INTERNSHIPS.map((r, i) => (
-            <li key={r.company} className={`irow rv${r.image ? "" : " irow--text"}`} data-rv style={{ "--d": "0.05s" } as CSSProperties}>
-              <div className="irow__meta">
-                <span className="irow__num">{String(i + 1).padStart(2, "0")}</span>
-                <h3 className="irow__company">{r.company}</h3>
-                <p className="irow__role">{r.role}</p>
-                <p className="irow__when">
-                  {r.period} · {r.place}
-                </p>
-              </div>
-              <div className="irow__body">
-                <p className="irow__sub">{r.sub}</p>
-                <ul className="irow__points">
-                  {r.points.map((p) => (
-                    <li key={p}>{p}</li>
-                  ))}
-                </ul>
-                {r.link ? (
-                  <a className="plink" href={r.link.href} target="_blank" rel="noopener noreferrer">
-                    {r.link.label} <ArrowIcon />
-                  </a>
-                ) : null}
-                {r.note ? <p className="irow__note">{r.note}</p> : null}
-              </div>
-              {r.image ? (
-                <figure className="irow__fig" data-liquid="">
-                  <Img src={r.image} alt={r.imageAlt ?? r.company} sizes="(max-width: 809px) 92vw, 26vw" />
-                </figure>
+        {INTERNSHIPS.map((r, i) => (
+          <article key={r.company} className="hcard icard">
+            {r.image ? (
+              <figure className="hcard__fig" data-imgfx data-rv>
+                <Img src={r.image} alt={r.imageAlt ?? r.company} sizes="(max-width: 809px) 92vw, 34vw" />
+              </figure>
+            ) : null}
+            <div className="hcard__body">
+              <p className="hcard__num">
+                {String(i + 1).padStart(2, "0")} · {r.period} · {r.place}
+              </p>
+              <h3 className="hcard__title">{r.company}</h3>
+              <p className="hcard__role">{r.role}</p>
+              <p className="hcard__sub">{r.sub}</p>
+              <ul className="irow__points">
+                {r.points.map((p) => (
+                  <li key={p}>{p}</li>
+                ))}
+              </ul>
+              {r.link ? (
+                <a className="plink" href={r.link.href} target="_blank" rel="noopener noreferrer">
+                  {r.link.label} <ArrowIcon />
+                </a>
               ) : null}
-            </li>
-          ))}
-        </ol>
-      </div>
+              {r.note ? <p className="irow__note">{r.note}</p> : null}
+            </div>
+          </article>
+        ))}
+      </HTrack>
     </section>
   );
 }

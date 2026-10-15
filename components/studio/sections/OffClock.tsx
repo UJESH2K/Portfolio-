@@ -47,7 +47,7 @@ function Glyph({ icon }: { icon: Icon }) {
 
 export default function OffClock() {
   return (
-    <section id="offclock" className="offclock" data-cue="offclock" aria-labelledby="offclock-title">
+    <section id="offclock" className="offclock theme-green" data-cue="offclock" aria-labelledby="offclock-title">
       <div className="wrap">
         <div className="offclock__row">
           <div>

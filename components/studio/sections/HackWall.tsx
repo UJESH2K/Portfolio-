@@ -4,7 +4,7 @@ import { Eyebrow, Img, SplitWords } from "../primitives";
 
 /**
  * The photo wall: an editorial collage of every personal photo. Each one
- * ripples under the liquid effect (LiquidMedia, via `data-liquid`), lifts on
+ * unveils as it scrolls into view (`data-imgfx`), lifts on
  * hover, catches a light sheen, and slides up its event and result.
  */
 export default function HackWall() {
@@ -28,7 +28,7 @@ export default function HackWall() {
               data-rv
               style={{ "--d": `${(i % 4) * 0.06}s` } as CSSProperties}
             >
-              <figure className="wall__fig" data-liquid="">
+              <figure className="wall__fig" data-imgfx data-rv>
                 <Img
                   src={ph.src}
                   alt={ph.alt}

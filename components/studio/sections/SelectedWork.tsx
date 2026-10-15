@@ -35,12 +35,12 @@ function Card({ item, index }: { item: WorkItem; index: number }) {
     } else v.pause();
   };
   const media = (
-    <figure className="pcard__media" data-liquid={item.image ? "" : undefined}>
+    <figure className="pcard__media" data-imgfx={item.image ? "" : undefined} data-rv>
       {item.image ? (
         <Img
           src={item.image}
           alt={item.imageAlt ?? item.title}
-          sizes={item.featured ? "(max-width: 809px) 92vw, 46vw" : "(max-width: 809px) 92vw, 30vw"}
+          sizes="(max-width: 809px) 92vw, (max-width: 1100px) 46vw, 30vw"
         />
       ) : (
         <Cover item={item} />
@@ -50,7 +50,7 @@ function Card({ item, index }: { item: WorkItem; index: number }) {
   );
   return (
     <li
-      className={`pcard${item.featured ? " pcard--feature" : ""}`}
+      className="pcard"
       style={{ "--d": `${(index % 3) * 0.06}s` } as CSSProperties}
       onPointerEnter={(e) => play(e, true)}
       onPointerLeave={(e) => play(e, false)}
