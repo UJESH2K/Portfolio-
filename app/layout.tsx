@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import "./site.css";
 import { PROFILE, SOCIALS } from "@/lib/content";
+import { SITE_URL } from "@/lib/site";
 
 // Three faces, one job each:
 //   Cabinet Grotesk — headings (Fontshare, ITF Free Font License)
@@ -34,29 +35,53 @@ const mono = localFont({
 
 
 const description =
-  "Ujesh Kumar Yadav — software engineer in Bengaluru building full-stack products, applied AI and distributed GPU systems. 7× hackathon winner, IMPACT-2027 paper.";
+  "Ujesh Kumar Yadav (Ujesh, UJESH2K) is a software engineer in Bengaluru building full-stack products, applied AI and distributed GPU systems. 7× hackathon winner, IMPACT-2027 paper, internships at EaseMed and Hitachi.";
 
-// Absolute base for Open Graph images: set NEXT_PUBLIC_SITE_URL to the real
-// domain; on Vercel previews the deployment URL is used automatically.
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+const title = `${PROFILE.name} (Ujesh) — Software Engineer, Bengaluru`;
+const shareImage = { url: "/media/life-podium-1600.webp", width: 1254, height: 1254, alt: "Ujesh Kumar Yadav speaking at a podium" };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: `${PROFILE.name} — Software Engineer`,
+  // Always the real domain, so search engines and link previews never point
+  // at a temporary Vercel deployment URL.
+  metadataBase: new URL(SITE_URL),
+  title,
   description,
+  applicationName: PROFILE.name,
+  authors: [{ name: PROFILE.name, url: SITE_URL }],
+  creator: PROFILE.name,
+  keywords: [
+    "Ujesh",
+    "Ujesh Kumar Yadav",
+    "Ujesh Yadav",
+    "UJESH2K",
+    "software engineer Bengaluru",
+    "full-stack developer",
+    "applied AI",
+    "GradMesh",
+    "hackathon winner",
+  ],
+  alternates: { canonical: "/" },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } },
   openGraph: {
-    title: `${PROFILE.name} — Software Engineer`,
+    title,
     description,
-    type: "website",
-    images: ["/media/win-inception-1600.webp"],
+    url: "/",
+    siteName: PROFILE.name,
+    type: "profile",
+    firstName: "Ujesh",
+    lastName: "Yadav",
+    locale: "en_IN",
+    images: [shareImage],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${PROFILE.name} — Software Engineer`,
+    title,
     description,
+    images: [shareImage.url],
   },
+  // Paste the code from Google Search Console's "HTML tag" method here
+  // (or set NEXT_PUBLIC_GOOGLE_VERIFICATION) to verify the site.
+  verification: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION ? { google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION } : undefined,
 };
 
 export const viewport: Viewport = {
@@ -65,15 +90,45 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+// Structured data: tells search engines this site is about one person, and
+// links it to the same person's GitHub, LinkedIn and Instagram.
 const personLd = {
   "@context": "https://schema.org",
-  "@type": "Person",
-  name: PROFILE.name,
-  jobTitle: PROFILE.title,
-  email: `mailto:${PROFILE.email}`,
-  address: { "@type": "PostalAddress", addressLocality: "Bengaluru", addressCountry: "IN" },
-  alumniOf: "Atria Institute of Technology",
-  sameAs: SOCIALS.filter((s) => s.href.startsWith("http")).map((s) => s.href),
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": `${SITE_URL}/#person`,
+      name: PROFILE.name,
+      alternateName: ["Ujesh", "Ujesh Yadav", "UJESH2K"],
+      givenName: "Ujesh",
+      familyName: "Yadav",
+      url: SITE_URL,
+      image: `${SITE_URL}${shareImage.url}`,
+      jobTitle: PROFILE.title,
+      description,
+      email: `mailto:${PROFILE.email}`,
+      address: { "@type": "PostalAddress", addressLocality: "Bengaluru", addressRegion: "Karnataka", addressCountry: "IN" },
+      alumniOf: { "@type": "CollegeOrUniversity", name: "Atria Institute of Technology" },
+      knowsAbout: ["Full-stack development", "Applied AI", "Retrieval-augmented generation", "Distributed GPU training", "Three.js"],
+      sameAs: SOCIALS.filter((s) => s.href.startsWith("http")).map((s) => s.href),
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: PROFILE.name,
+      alternateName: ["Ujesh", "ujesh.in"],
+      publisher: { "@id": `${SITE_URL}/#person` },
+    },
+    {
+      "@type": "ProfilePage",
+      "@id": `${SITE_URL}/#profile`,
+      url: SITE_URL,
+      name: title,
+      mainEntity: { "@id": `${SITE_URL}/#person` },
+      isPartOf: { "@id": `${SITE_URL}/#website` },
+    },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

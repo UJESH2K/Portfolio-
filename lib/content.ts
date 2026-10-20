@@ -780,7 +780,7 @@ export type BalloonChip = { label: string; href: string };
 export type BalloonBeat = { text: string; chips?: BalloonChip[]; mood?: RobotMood };
 
 export const LANDING = {
-  eyebrow: "Software engineer · Bengaluru",
+  eyebrow: "Ujesh Kumar Yadav · Software engineer · Bengaluru",
   scrollHint: "Scroll to explore",
   intro: [
     { text: "Hi! I'm Ujesh's robot.", mood: "wave" },
