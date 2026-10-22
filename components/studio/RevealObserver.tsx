@@ -7,17 +7,26 @@ import { useEffect } from "react";
  * `data-rv` gets `.is-in` the first time it is 12% on screen. A
  * MutationObserver picks up elements mounted later (client sections, the
  * menu), so components never have to register themselves.
+ *
+ * Once revealed, an element stays revealed: when React rewrites its
+ * className (an FAQ opening, a row going hot), `.is-in` is put straight back
+ * before the next paint, instead of the element fading out again.
  */
 export default function RevealObserver() {
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const seen = new WeakSet<Element>();
+    const revealed = new WeakSet<Element>();
+    const reveal = (el: Element) => {
+      revealed.add(el);
+      el.classList.add("is-in");
+    };
 
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
           if (!e.isIntersecting) continue;
-          e.target.classList.add("is-in");
+          reveal(e.target);
           io.unobserve(e.target);
         }
       },
@@ -28,7 +37,7 @@ export default function RevealObserver() {
       document.querySelectorAll("[data-rv]").forEach((el) => {
         if (seen.has(el)) return;
         seen.add(el);
-        if (reduced) el.classList.add("is-in");
+        if (reduced) reveal(el);
         else io.observe(el);
       });
     };
@@ -70,8 +79,17 @@ export default function RevealObserver() {
 
     scan();
     prime();
-    const mo = new MutationObserver(rescan);
-    mo.observe(document.body, { childList: true, subtree: true });
+    const mo = new MutationObserver((records) => {
+      let added = false;
+      for (const r of records) {
+        if (r.type === "childList") added = true;
+        else if (revealed.has(r.target as Element) && !(r.target as Element).classList.contains("is-in")) {
+          (r.target as Element).classList.add("is-in");
+        }
+      }
+      if (added) rescan();
+    });
+    mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
 
     return () => {
       io.disconnect();

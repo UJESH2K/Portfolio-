@@ -1,5 +1,7 @@
 import SmoothScroll from "@/components/site/SmoothScroll";
 import RevealObserver from "@/components/studio/RevealObserver";
+import ScrollFx from "@/components/studio/ScrollFx";
+import Cursor from "@/components/studio/Cursor";
 import Preloader from "@/components/studio/Preloader";
 import Chrome from "@/components/studio/Chrome";
 import Hero from "@/components/studio/Hero";
@@ -35,6 +37,8 @@ export default async function Home() {
     <div className="site">
       <SmoothScroll />
       <RevealObserver />
+      <ScrollFx />
+      <Cursor />
       <Preloader />
       <Chrome />
       <RobotLayer />

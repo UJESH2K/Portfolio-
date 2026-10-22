@@ -78,6 +78,8 @@ export default function Hero() {
   }, []);
 
   const done = typed.length === HERO.hello.length;
+  // The name types out in the italic serif.
+  const NAME_AT = HERO.hello.indexOf("Ujesh");
 
   return (
     <section id="top" className="hero" data-cue="hero" aria-label="Introduction">
@@ -88,7 +90,8 @@ export default function Hero() {
         <h1 className="hero__title">
           <span className="sr-only">{HERO.hello}</span>
           <span aria-hidden="true">
-            {typed || " "}
+            {typed.slice(0, NAME_AT) || " "}
+            {typed.length > NAME_AT ? <em className="hero__name">{typed.slice(NAME_AT)}</em> : null}
             <span className="caret" />
           </span>
         </h1>

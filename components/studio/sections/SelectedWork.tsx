@@ -1,10 +1,9 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useCallback, useMemo, useState, type CSSProperties } from "react";
 import { PROFILE, SOCIALS, WORK, WORK_INTRO, type WorkItem, type WorkKind } from "@/lib/content";
 import type { Repo } from "@/lib/github";
-import type { WorldItem } from "@/components/ui/github-world";
+import RepoOrb, { type OrbItem } from "./RepoOrb";
 import ProjectModal, { type ProjectDetail } from "../ProjectModal";
 import { ArrowIcon, Cta, Eyebrow, Img, SplitWords } from "../primitives";
 import Scramble from "../Scramble";
@@ -42,6 +41,9 @@ const fromWork = (w: WorkItem): ArchiveItem => ({
   youtube: w.youtube,
   cover: w.cover,
 });
+
+/** Repos kept off the site entirely. */
+const HIDDEN_REPOS = /^dryp/i;
 
 const pretty = (name: string) => name.replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
 
@@ -110,13 +112,7 @@ function Featured({ item, onOpen, index }: { item: ArchiveItem; onOpen: () => vo
   );
 }
 
-/** The 3D world loads in the browser only (three.js needs the DOM). */
-const GitHubWorld = dynamic(() => import("@/components/ui/github-world"), {
-  ssr: false,
-  loading: () => <div className="ghw ghw--loading" aria-hidden="true" />,
-});
-
-const toWorld = (it: ArchiveItem): WorldItem => ({
+const toOrb = (it: ArchiveItem): OrbItem => ({
   key: it.key,
   title: it.title,
   text: it.headline || it.text,
@@ -124,12 +120,13 @@ const toWorld = (it: ArchiveItem): WorldItem => ({
   group: it.group,
   stars: it.stars,
   date: it.date,
-  image: it.image,
+  code: it.code,
+  live: it.live,
 });
 
 /**
  * Projects: four featured ones up top, then every other project and every
- * public GitHub repo on a 3D carousel, all opening the same details window.
+ * public GitHub repo as a keycap on one ball, all opening the same details window.
  */
 export default function SelectedWork({ repos }: { repos: Repo[] }) {
   const [open, setOpen] = useState<ProjectDetail | null>(null);
@@ -141,11 +138,11 @@ export default function SelectedWork({ repos }: { repos: Repo[] }) {
     const rest = WORK.filter((w) => !featured.some((f) => f.key === w.id)).map(fromWork);
     // Repos already shown as a project aren't listed twice.
     const linked = new Set(WORK.map((w) => w.code?.toLowerCase()).filter(Boolean));
-    return [...rest, ...repos.filter((r) => !linked.has(r.url.toLowerCase())).map(fromRepo)];
+    return [...rest, ...repos.filter((r) => !linked.has(r.url.toLowerCase()) && !HIDDEN_REPOS.test(r.name)).map(fromRepo)];
     // WORK is static; featured is derived from it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [repos]);
-  const worldItems = useMemo(() => archive.map(toWorld), [archive]);
+  const orbItems = useMemo(() => archive.map(toOrb), [archive]);
   const holdSound = useCallback((on: boolean) => setSfxHold("world", on), []);
 
   return (
@@ -172,10 +169,10 @@ export default function SelectedWork({ repos }: { repos: Repo[] }) {
 
         <div className="work__archivehead">
           <p className="work__sub">Explore everything</p>
-          <p className="work__hint">{archive.length} projects and repos in one world. Drag to look around; open any card.</p>
+          <p className="work__hint">{archive.length} projects and repos, one key each. Drag to spin; press any key.</p>
         </div>
-        <GitHubWorld
-          items={worldItems}
+        <RepoOrb
+          items={orbItems}
           user="UJESH2K"
           onOpen={(key) => setOpen(archive.find((a) => a.key === key) ?? null)}
           onHold={holdSound}

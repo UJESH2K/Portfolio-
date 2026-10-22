@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { FEED_INTRO, PROFILE, SOCIALS, SOCIAL_POSTS, isMissing, type Post } from "@/lib/content";
 import { ArrowIcon, Eyebrow, SplitWords } from "../primitives";
+import BgWord from "../BgWord";
 
 const NOTES: Record<string, string> = {
   github: `${PROFILE.publicRepos}+ public projects, from GPU meshes to hackathon builds.`,
@@ -31,7 +32,8 @@ export default function Feed({ posts }: { posts: Post[] }) {
   const adminPosts = posts.filter((p) => p.linkUrl);
 
   return (
-    <section id="feed" className="feed" data-cue="feed" aria-labelledby="feed-title">
+    <section id="feed" className="feed has-bgword" data-cue="feed" aria-labelledby="feed-title">
+      <BgWord text="Build in public" />
       <div className="wrap">
         <div className="feed__head">
           <div>

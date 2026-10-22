@@ -7,13 +7,36 @@ import type { CSSProperties, ReactNode } from "react";
  */
 
 /** Wraps each word in a mask so a heading can rise word by word. */
+type Accent = "" | "it" | "ol" | "mk";
+const MARKS: Record<string, Accent> = { "*": "it", "~": "ol", _: "mk" };
+
+/**
+ * Words that rise into place one by one. A heading can carry accents:
+ * `*an italic serif*`, `~outlined~` and `_a highlighter band_` (the band
+ * sweeps in on reveal and drifts with the scroll). The markers never show.
+ */
 export function SplitWords({ text, delay = 0 }: { text: string; delay?: number }) {
-  const words = text.split(" ");
+  let accent: Accent = "";
+  const words = text.split(" ").map((raw) => {
+    let w = raw;
+    const open = MARKS[w[0]];
+    if (!accent && open) {
+      accent = open;
+      w = w.slice(1);
+    }
+    const style = accent;
+    const tail = w.match(/[*~_]([.,!?:;]*)$/);
+    if (style && tail && MARKS[tail[0][0]] === style) {
+      w = w.slice(0, tail.index) + tail[1];
+      accent = "";
+    }
+    return { w, style };
+  });
   return (
     <>
-      {words.map((w, i) => (
+      {words.map(({ w, style }, i) => (
         <span key={i}>
-          <span className="sw" style={{ "--d": `${delay}s` } as CSSProperties}>
+          <span className={`sw${style ? ` sw--${style}` : ""}`} style={{ "--d": `${delay}s` } as CSSProperties} data-sfx={style === "mk" ? "" : undefined}>
             <span style={{ "--i": i } as CSSProperties}>{w}</span>
           </span>
           {i < words.length - 1 ? " " : null}
@@ -22,6 +45,9 @@ export function SplitWords({ text, delay = 0 }: { text: string; delay?: number }
     </>
   );
 }
+
+/** Strips the accent markers, for places that need the plain sentence. */
+export const plainText = (text: string) => text.replace(/[*~_]/g, "");
 
 const Arrow = () => (
   <svg className="cta__ic" viewBox="0 0 12 12" fill="none" aria-hidden="true">

@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { Instrument_Serif } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import "./site.css";
 import { FAQS, PROFILE, SOCIALS, WORK } from "@/lib/content";
@@ -19,6 +21,14 @@ const heading = localFont({
   display: "swap",
 });
 
+// Instrument Serif (OFL) — the italic accent words in headings.
+const serif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--font-serif",
+  display: "swap",
+});
 const body = localFont({
   src: "./fonts/geist-latin.woff2",
   weight: "300 700",
@@ -162,7 +172,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${heading.variable} ${body.variable} ${mono.variable}`}
+      className={`${heading.variable} ${body.variable} ${mono.variable} ${serif.variable}`}
       suppressHydrationWarning
     >
       <body>
@@ -171,6 +181,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personLd) }}
         />
         {children}
+        {/* Private visitor counts in the Vercel dashboard; nothing shows on the page. */}
+        <Analytics />
       </body>
     </html>
   );

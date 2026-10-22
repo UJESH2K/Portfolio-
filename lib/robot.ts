@@ -38,6 +38,8 @@ type RobotState = {
   moodTick: number;
   speech: Speech | null;
   muted: boolean;
+  /** True once the visitor has used the Sound switch either way. */
+  soundChosen: boolean;
   hidden: boolean;
   setIntroDone: () => void;
   setProgress: (p: number) => void;
@@ -65,6 +67,7 @@ export const useRobot = create<RobotState>((set) => ({
   moodTick: 0,
   speech: null,
   muted: true,
+  soundChosen: false,
   hidden: false,
   setIntroDone: () => set({ introDone: true }),
   setProgress: (progress) => set({ progress }),
@@ -81,7 +84,7 @@ export const useRobot = create<RobotState>((set) => ({
     })),
   hush: () => set({ speech: null }),
   react: (mood) => set((s) => ({ mood, moodTick: s.moodTick + 1 })),
-  toggleMuted: () => set((s) => ({ muted: !s.muted })),
+  toggleMuted: () => set((s) => ({ muted: !s.muted, soundChosen: true })),
   setHidden: (hidden) => set((s) => ({ hidden, speech: hidden ? null : s.speech })),
 }));
 

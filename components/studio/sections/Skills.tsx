@@ -2,16 +2,18 @@ import type { CSSProperties } from "react";
 import { SKILL_GROUPS } from "@/lib/content";
 import { RESUME } from "@/lib/resume";
 import { Cta, Eyebrow, SplitWords } from "../primitives";
+import BgWord from "../BgWord";
 
 export default function Skills() {
   return (
-    <section id="skills" className="skills" aria-labelledby="skills-title">
+    <section id="skills" className="skills has-bgword" aria-labelledby="skills-title">
+      <BgWord text="The stack" />
       <div className="wrap">
         <div className="skills__head">
           <div>
             <Eyebrow>The stack</Eyebrow>
             <h2 id="skills-title" className="h2" style={{ marginTop: 18 }} data-rv>
-              <SplitWords text="Tools I reach for." />
+              <SplitWords text="Tools I *reach for.*" />
             </h2>
           </div>
           <Cta href={RESUME.href} width={300} download={RESUME.download} external={RESUME.external}>

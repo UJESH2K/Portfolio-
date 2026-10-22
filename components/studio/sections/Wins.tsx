@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { STATS, WINS, WINS_INTRO } from "@/lib/content";
 import { Img, SplitWords } from "../primitives";
 import { scrambleInto } from "../Scramble";
+import BgWord from "../BgWord";
 
 const DURATION = 5200;
 
@@ -107,7 +108,8 @@ export default function Wins() {
   const win = WINS[idx];
 
   return (
-    <section id="wins" className="wins" data-cue="wins" aria-labelledby="wins-title">
+    <section id="wins" className="wins has-bgword" data-cue="wins" aria-labelledby="wins-title">
+      <BgWord text="Winner" reverse />
       <div
         className="wins__stage"
         ref={stage}

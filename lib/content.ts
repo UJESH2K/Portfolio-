@@ -538,16 +538,6 @@ export const PROJECTS: Project[] = [
     live: "https://printprfect.vercel.app",
     year: "2026",
   },
-  {
-    id: "dryp",
-    title: "DRYP Store",
-    subtitle: "Commerce front-end",
-    description: "Storefront build with a full product and checkout flow.",
-    stack: ["TypeScript", "Next.js"],
-    repo: "https://github.com/UJESH2K/DRYP-store",
-    live: "https://dryp-store-sable.vercel.app",
-    year: "2025",
-  },
 ];
 
 // ─── Freelance / client work ──────────────────────────────────────────────
@@ -859,7 +849,7 @@ export type StoryChapter = {
 /** "The story so far": the life, not the resume. */
 export const STORY = {
   eyebrow: "The story so far",
-  title: "Eight chapters, one habit: build the thing, then show up for it.",
+  title: "Eight chapters, one habit: _build the thing,_ then *show up* for it.",
   chapters: [
     {
       issue: "#01",
@@ -1041,7 +1031,7 @@ export type WorkItem = {
 
 export const WORK_INTRO = {
   eyebrow: "Projects",
-  title: ["Built, shipped,", "and sometimes won."],
+  title: ["Built, ~shipped,~", "and *sometimes won.*"],
   text: "Hackathon builds that took first place, research on its way to a conference stage, and the side projects in between. Live links where they're live, code where it's public.",
 };
 
@@ -1242,7 +1232,7 @@ export type Internship = {
 
 export const INTERNSHIPS_INTRO = {
   eyebrow: "Internships",
-  title: "Three internships, real people on the other end.",
+  title: "Three internships, *real people* on the _other end._",
   text: "A healthcare startup, an industry research collaboration with Hitachi, and an AICTE programme with Microsoft and SAP.",
 };
 
@@ -1308,7 +1298,7 @@ export type Client = {
 
 export const CLIENTS_INTRO = {
   eyebrow: "Freelance & clients",
-  title: "Products and sites for people who use them.",
+  title: "Products and sites for *people* who _use them._",
   text: "Startups and small businesses: an AI tutor in production, a wellbeing platform, a resort and a merch store, each one designed, built and shipped end to end.",
 };
 
@@ -1360,15 +1350,6 @@ export const CLIENTS: Client[] = [
     imageAlt: "The Print Perfect storefront",
     live: "https://printprfect.vercel.app",
   },
-  {
-    name: "DRYP",
-    what: "A storefront, end to end",
-    role: "Commerce build",
-    year: "2025",
-    text: "The full product, cart and checkout flow for an online store.",
-    code: "https://github.com/UJESH2K/DRYP-store",
-    note: "The live store is offline; the code is public.",
-  },
 ];
 
 export type Lead = {
@@ -1381,7 +1362,7 @@ export type Lead = {
 
 export const LEADERSHIP_INTRO = {
   eyebrow: "Leadership & community",
-  title: "Running the room, not just sitting in it.",
+  title: "_Running the room,_ not just *sitting in it.*",
   text: "A code club that runs like a small company, a tech fest with a thousand applicants, and hackathons organised almost as often as entered.",
   photos: [
     { src: "/media/life-talk", alt: "Ujesh speaking into a microphone, his sticker-covered laptop beside him" },
@@ -1420,7 +1401,7 @@ export const LEADERSHIP: Lead[] = [
 ];
 
 export const ABOUT = {
-  title: ["Seven wins, fifty-plus hackathons,", "and a habit of shipping by Monday."],
+  title: ["Seven wins, ~fifty-plus~ hackathons,", "and a habit of *shipping by Monday.*"],
   label: "( The short version )",
   paragraphs: [
     "I like the part of engineering where an idea has to survive real users. At EaseMed that meant hospital and vendor teams messaging in real time. At Edactly it means students watching lessons generated from a single prompt.",
@@ -1445,7 +1426,7 @@ export type Win = {
 
 export const WINS_INTRO = {
   eyebrow: "Wins",
-  title: "Fifty-plus hackathons. Seven wins. A different problem every weekend.",
+  title: "Fifty-plus hackathons. _Seven wins._ A different problem *every weekend.*",
   text: "World models, blockchain, accessibility, healthcare: the theme changes every time. The habit of shipping something that works by the final demo doesn't.",
 };
 
@@ -1535,7 +1516,7 @@ export type WallPhoto = {
 
 export const HACK_WALL = {
   eyebrow: "On the floor",
-  title: "Cheques, certificates and very little sleep.",
+  title: "Cheques, certificates and *very little sleep.*",
   text: "Hackathons, stages, teammates and friends: the people and the moments behind the work.",
   photos: [
     { src: "/media/win-cypher", alt: "The team on stage with certificates at Cypher", event: "Cypher 1", result: "Winner", feature: true },
@@ -1581,7 +1562,7 @@ export type Paper = {
 
 export const RESEARCH_INTRO = {
   eyebrow: "Research",
-  title: "Papers, a book chapter and work in progress.",
+  title: "_Papers,_ a book chapter and *work in progress.*",
   text: "Most of my research asks one question: how much training can you squeeze out of the GPUs people already own?",
   photo: {
     src: "/media/life-classroom",
@@ -1649,7 +1630,7 @@ export const SOCIAL_POSTS: SocialPost[] = [];
 
 export const FEED_INTRO = {
   eyebrow: "Around the internet",
-  title: "Build logs, hackathon recaps and the occasional win, as they happen.",
+  title: "Build logs, hackathon recaps and the *occasional win,* as they happen.",
 };
 
 export const OFF_CLOCK = {
@@ -1667,7 +1648,7 @@ export const OFF_CLOCK = {
 export type Faq = { q: string; a: string };
 
 export const FAQ_INTRO = {
-  title: ["Questions?", "Answered", "right here."],
+  title: ["Questions?", "*Answered*", "_right here._"],
   label: "Let's talk",
   cta: "Email me",
 };
@@ -1726,7 +1707,7 @@ export const ROBOT_LINES: Record<string, { line: string; mood?: RobotMood }> = {
   signals: { line: "I'll follow you down. Click me any time for shortcuts.", mood: "wave" },
   story: { line: "The short version: eight chapters, all true." },
   build: { line: "Here's what he builds. Keep scrolling, the cards fly past." },
-  work: { line: "The projects! Filter them: hackathon, research or side project." },
+  work: { line: "Every project on one ball of keys. Spin it and press one!" },
   internships: { line: "Three internships. Real users, real deadlines." },
   freelance: { line: "Client work: real sites for real clients." },
   about: { line: "That's him on stage. He talks faster than I compute." },
