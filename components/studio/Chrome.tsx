@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { HERO, SITE_NAV, SOCIALS, WORK, isMissing } from "@/lib/content";
 import { goTo, useRobot } from "@/lib/robot";
 import NavPill from "./NavPill";
+import NewsBell from "./NewsBell";
 
 /**
  * The fixed frame around every page: wordmark, the chapter capsule
@@ -85,6 +86,7 @@ export default function Chrome() {
       </a>
 
       <NavPill navigate={navigate} openMenu={() => setMenuOpen(true)} />
+      <NewsBell />
 
       <button
         ref={burgerRef}

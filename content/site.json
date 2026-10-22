@@ -1,0 +1,46 @@
+{
+  "youtube": {
+    "channel": "https://www.youtube.com/@UJESHKUMARYADAV",
+    "handle": "@UJESHKUMARYADAV",
+    "latestVideo": {
+      "url": "https://www.youtube.com/watch?v=07qBMjPD6m0",
+      "title": "New video: I Landed on the Moon From My Laptop!! 1,138 crashes, then 94% landings."
+    }
+  },
+  "socials": {
+    "x": "",
+    "facebook": ""
+  },
+  "news": [
+    {
+      "id": "crashgraph",
+      "date": "2026-10-18",
+      "tag": "New project",
+      "text": "CrashGraph: a rocket lander with no neural network. Its whole brain is a FalkorDB graph, and it lands 94% of the time.",
+      "href": "#work"
+    },
+    {
+      "id": "impact-2027",
+      "date": "2026-10-01",
+      "tag": "Research",
+      "text": "GradMesh accepted at IMPACT-2027. Presenting in January 2027.",
+      "href": "#research"
+    },
+    {
+      "id": "viksit",
+      "date": "2026-09-20",
+      "tag": "Research",
+      "text": "Book chapter abstract accepted for AI for Viksit Bharat 2047 (MNNIT Allahabad).",
+      "href": "#research"
+    }
+  ],
+  "featured": [
+    "crashgraph",
+    "worldforge",
+    "gradmesh",
+    "tidewatch"
+  ],
+  "projects": [],
+  "hidden": [],
+  "wallPhotos": []
+}

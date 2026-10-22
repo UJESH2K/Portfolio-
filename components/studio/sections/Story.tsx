@@ -4,7 +4,8 @@ import { Eyebrow, SplitWords } from "../primitives";
 
 /**
  * "The story so far" — the life rather than the resume, laid out as a page
- * of comic issues. Each issue links to the section that tells it properly.
+ * of comic issues. Each issue jumps to the section that tells it properly;
+ * one that has no section yet says so instead of linking nowhere.
  */
 export default function Story() {
   return (
@@ -19,14 +20,23 @@ export default function Story() {
         <ol className="story__grid">
           {STORY.chapters.map((c, i) => (
             <li key={c.issue} className="story__cell rv" data-rv style={{ "--d": `${(i % 4) * 0.06}s` } as CSSProperties}>
-              <a className="story__card" href={c.href}>
-                <span className="story__issue">{c.issue}</span>
-                <span className="story__title">{c.title}</span>
-                <span className="story__text">{c.text}</span>
-                <span className="story__go" aria-hidden="true">
-                  Read →
-                </span>
-              </a>
+              {c.href ? (
+                <a className="story__card" href={c.href}>
+                  <span className="story__issue">{c.issue}</span>
+                  <span className="story__title">{c.title}</span>
+                  <span className="story__text">{c.text}</span>
+                  <span className="story__go" aria-hidden="true">
+                    {c.go ? `Go to ${c.go}` : "Go to the chapter"} ↓
+                  </span>
+                </a>
+              ) : (
+                <div className="story__card story__card--soon">
+                  <span className="story__issue">{c.issue}</span>
+                  <span className="story__title">{c.title}</span>
+                  <span className="story__text">{c.text}</span>
+                  <span className="story__go">Coming soon</span>
+                </div>
+              )}
             </li>
           ))}
         </ol>

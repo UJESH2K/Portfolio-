@@ -9,6 +9,7 @@ const NOTES: Record<string, string> = {
   x: "Short thoughts, shipped often.",
   facebook: "Events, photos and announcements.",
   holopin: "Open-source badges, Hacktoberfest included.",
+  youtube: "Build videos, demos and project breakdowns.",
 };
 
 const PLATFORM_LABEL: Record<string, string> = {

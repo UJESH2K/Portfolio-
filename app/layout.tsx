@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import "./site.css";
-import { PROFILE, SOCIALS } from "@/lib/content";
+import { FAQS, PROFILE, SOCIALS, WORK } from "@/lib/content";
 import { SITE_URL } from "@/lib/site";
 
 // Three faces, one job each:
@@ -38,7 +38,10 @@ const description =
   "Ujesh Kumar Yadav (Ujesh, UJESH2K) is a software engineer in Bengaluru building full-stack products, applied AI and distributed GPU systems. 7× hackathon winner, IMPACT-2027 paper, internships at EaseMed and Hitachi.";
 
 const title = `${PROFILE.name} (Ujesh) — Software Engineer, Bengaluru`;
-const shareImage = { url: "/media/life-podium-1600.webp", width: 1254, height: 1254, alt: "Ujesh Kumar Yadav speaking at a podium" };
+// Link previews and search: the 1200×630 card (public/og.jpg) with his photo
+// at the podium; the photo on its own stands for him in structured data.
+const shareImage = { url: "/og.jpg", width: 1200, height: 630, alt: "Ujesh Kumar Yadav, software engineer, speaking at a podium" };
+const portrait = "/media/life-podium-1600.webp";
 
 export const metadata: Metadata = {
   // Always the real domain, so search engines and link previews never point
@@ -103,7 +106,7 @@ const personLd = {
       givenName: "Ujesh",
       familyName: "Yadav",
       url: SITE_URL,
-      image: `${SITE_URL}${shareImage.url}`,
+      image: { "@type": "ImageObject", url: `${SITE_URL}${portrait}`, width: 1254, height: 1254, caption: "Ujesh Kumar Yadav speaking at a podium" },
       jobTitle: PROFILE.title,
       description,
       email: `mailto:${PROFILE.email}`,
@@ -127,6 +130,30 @@ const personLd = {
       name: title,
       mainEntity: { "@id": `${SITE_URL}/#person` },
       isPartOf: { "@id": `${SITE_URL}/#website` },
+      primaryImageOfPage: { "@type": "ImageObject", url: `${SITE_URL}${portrait}` },
+      image: `${SITE_URL}${shareImage.url}`,
+    },
+    {
+      "@type": "ItemList",
+      "@id": `${SITE_URL}/#projects`,
+      name: "Projects by Ujesh Kumar Yadav",
+      itemListElement: WORK.filter((w) => w.featured).map((w, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        item: {
+          "@type": "CreativeWork",
+          name: w.title,
+          description: w.headline,
+          creator: { "@id": `${SITE_URL}/#person` },
+          ...(w.image ? { image: `${SITE_URL}${w.image}-1600.webp` } : {}),
+          ...(w.live || w.code ? { url: w.live ?? w.code } : {}),
+        },
+      })),
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${SITE_URL}/#faq`,
+      mainEntity: FAQS.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
     },
   ],
 };

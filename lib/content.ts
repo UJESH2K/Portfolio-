@@ -14,7 +14,27 @@
 // before you fill them in.
 // ─────────────────────────────────────────────────────────────────────────
 
+import siteJson from "@/content/site.json";
+
 export const NEEDS_INPUT = "NEEDS_INPUT" as const;
+
+/**
+ * What /edit can change without touching code: lives in content/site.json,
+ * which /edit commits to the repo (and Vercel redeploys). Everything below
+ * merges it over the defaults in this file.
+ */
+export type NewsItem = { id: string; date: string; tag: string; text: string; href?: string };
+export type SiteOverrides = {
+  youtube: { channel: string; handle: string; latestVideo: { url: string; title: string } };
+  socials: { x: string; facebook: string };
+  news: NewsItem[];
+  featured: string[];
+  projects: WorkItem[];
+  hidden: string[];
+  wallPhotos: WallPhoto[];
+};
+export const SITE = siteJson as unknown as SiteOverrides;
+const orMissing = (v?: string) => (v && v.trim() ? v.trim() : NEEDS_INPUT);
 
 /** True when a value is still an unfilled placeholder. */
 export const isMissing = (v?: string): boolean =>
@@ -90,19 +110,25 @@ export const SOCIALS: Social[] = [
     color: "#e4405f",
   },
   {
-    // NEEDS_INPUT: paste the profile URL and handle; hidden until then.
+    // Set from /edit (content/site.json); hidden until then.
+    id: "youtube",
+    label: "YouTube",
+    handle: orMissing(SITE.youtube.handle || (SITE.youtube.channel ? "YouTube channel" : "")),
+    href: orMissing(SITE.youtube.channel),
+    color: "#ff0033",
+  },
+  {
     id: "x",
     label: "X (Twitter)",
-    handle: NEEDS_INPUT,
-    href: NEEDS_INPUT,
+    handle: orMissing(SITE.socials.x ? "X" : ""),
+    href: orMissing(SITE.socials.x),
     color: "#e7e9ea",
   },
   {
-    // NEEDS_INPUT: paste the profile URL and handle; hidden until then.
     id: "facebook",
     label: "Facebook",
-    handle: NEEDS_INPUT,
-    href: NEEDS_INPUT,
+    handle: orMissing(SITE.socials.facebook ? "Facebook" : ""),
+    href: orMissing(SITE.socials.facebook),
     color: "#1877f2",
   },
   {
@@ -805,7 +831,10 @@ export type StoryChapter = {
   issue: string;
   title: string;
   text: string;
-  href: string;
+  /** Where it jumps to; none means the chapter has no section yet. */
+  href?: string;
+  /** The button text, naming where it goes. */
+  go?: string;
 };
 
 /** "The story so far": the life, not the resume. */
@@ -816,36 +845,42 @@ export const STORY = {
     {
       issue: "#01",
       title: "College, the long way round",
+      go: "Leadership",
       text: "Computer science at Atria (VTU) since 2023, plus a 200-plus member code club I now lead.",
       href: "#leadership",
     },
     {
       issue: "#02",
       title: "Fifty-plus hackathons",
+      go: "Wins",
       text: "Seven wins, twenty national finals, and five more hackathons I organised for 500+ people each.",
       href: "#wins",
     },
     {
       issue: "#03",
       title: "Internships",
+      go: "Internships",
       text: "Outbreak prediction at EaseMed, bird-species detection at Hitachi, lightweight vision models with AICTE.",
       href: "#internships",
     },
     {
       issue: "#04",
       title: "Freelance",
+      go: "Freelance",
       text: "Edactly's prompt-to-lesson video pipeline, plus sites for NEXR, a resort and a merch store.",
       href: "#freelance",
     },
     {
       issue: "#05",
       title: "Research & conferences",
+      go: "Research",
       text: "GradMesh at IMPACT-2027, a book chapter for Viksit Bharat 2047, and the next paper in progress.",
       href: "#research",
     },
     {
       issue: "#06",
       title: "AI/ML, in the room",
+      go: "Leadership",
       text: "AI/ML events and talks, on the stage and in the audience. RAG, vision and GPUs, mostly.",
       href: "#leadership",
     },
@@ -853,11 +888,11 @@ export const STORY = {
       issue: "#07",
       title: "A business of my own",
       text: "I've raised money to start a business. More on that soon.",
-      href: "#contact",
     },
     {
       issue: "#08",
       title: "Off the clock",
+      go: "Off the clock",
       text: "Marathons, the gym every day, football, dancing and a lot of games.",
       href: "#offclock",
     },
@@ -981,6 +1016,8 @@ export type WorkItem = {
   code?: string;
   /** Large card at the top of the index. */
   featured?: boolean;
+  /** A demo or explainer video (YouTube). */
+  youtube?: string;
 };
 
 export const WORK_INTRO = {
@@ -996,7 +1033,21 @@ export const WORK_FILTERS: { id: WorkKind | "all"; label: string }[] = [
   { id: "side", label: "Side projects" },
 ];
 
-export const WORK: WorkItem[] = [
+/** The projects defined in code (before /edit's additions and hiding). */
+export const BASE_WORK: WorkItem[] = [
+  {
+    id: "crashgraph",
+    title: "CrashGraph",
+    headline: "A rocket lander with no neural network",
+    text: "The lander starts knowing nothing and crashes, 1,138 times. After every attempt it writes what happened into a FalkorDB graph, and before every engine decision it asks that graph what happened last time it was here. 3,743 attempts later it lands 94% of the time, and its memory holds 108,061 skill tiles, 1,744 situations and 8,775 transitions. Because the knowledge is a graph, not weights, it can tell you why it crashed. Wipe the memory and it can't fly (0 of 30 landings); restore it and it lands again (26 of 30). Three worlds: the Moon, Mars with crosswinds, and turbulent, low-gravity Titan.",
+    kind: "hackathon",
+    context: "Graph Hacks · WeMakeDevs × FalkorDB · Oct 2026",
+    stack: ["Python", "FalkorDB", "Gymnasium Box2D", "Three.js", "AWS"],
+    image: "/media/work-crashgraph-yt",
+    imageAlt: "Ujesh with the CrashGraph lander touching down on the Moon, 94% landing rate",
+    code: "https://github.com/UJESH2K/crashgraph",
+    youtube: "https://www.youtube.com/watch?v=07qBMjPD6m0",
+  },
   {
     id: "worldforge",
     title: "WorldForge",
@@ -1142,6 +1193,19 @@ export const WORK: WorkItem[] = [
     cover: { stat: "HAM10000", label: "dermoscopic images, classified" },
     code: "https://github.com/UJESH2K/Skin-cancer-prediction",
   },
+];
+
+/** Projects: the editable ones first, hidden ones out, featured from /edit. */
+export const WORK: WorkItem[] = [...SITE.projects, ...BASE_WORK]
+  .filter((w) => !SITE.hidden.includes(w.id))
+  .map((w) => ({ ...w, featured: SITE.featured.length ? SITE.featured.includes(w.id) : w.featured }));
+
+/** The latest news: newest first, shown in the notification panel. */
+export const NEWS: NewsItem[] = [
+  ...(SITE.youtube.latestVideo.url
+    ? [{ id: `yt-${SITE.youtube.latestVideo.url}`, date: "", tag: "YouTube", text: SITE.youtube.latestVideo.title || "New video on YouTube", href: SITE.youtube.latestVideo.url }]
+    : []),
+  ...SITE.news,
 ];
 
 export type Internship = {
@@ -1481,6 +1545,7 @@ export const HACK_WALL = {
     { src: "/media/life-classroom", alt: "Ujesh presenting to a classroom", event: "Running a session" },
     { src: "/media/life-swag", alt: "A pile of hackathon t-shirts, bags and badges", event: "The swag pile" },
     { src: "/media/life-build-3", alt: "Teammates at a hackathon, one looking at the camera", event: "The crew" },
+    ...SITE.wallPhotos,
   ] as WallPhoto[],
 };
 

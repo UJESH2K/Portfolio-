@@ -24,11 +24,12 @@ import OffClock from "@/components/studio/sections/OffClock";
 import Faq from "@/components/studio/sections/Faq";
 import Footer from "@/components/studio/sections/Footer";
 import { getPosts } from "@/lib/getContent";
+import { getRepos } from "@/lib/github";
 
 export const revalidate = 60;
 
 export default async function Home() {
-  const posts = await getPosts();
+  const [posts, repos] = await Promise.all([getPosts(), getRepos()]);
 
   return (
     <div className="site">
@@ -48,7 +49,7 @@ export default async function Home() {
         <BuildOrbit />
         <Internships />
         <Clients />
-        <SelectedWork />
+        <SelectedWork repos={repos} />
         <Skills />
         <About />
         <Leadership />
