@@ -196,6 +196,12 @@ export default function EditPage() {
             <Field label="Facebook link">
               <input className={field} value={site.socials.facebook} onChange={(e) => update((s) => ((s.socials.facebook = e.target.value), s))} />
             </Field>
+            <Field label="CodeChef link">
+              <input className={field} value={site.socials.codechef ?? ""} onChange={(e) => update((s) => ((s.socials.codechef = e.target.value), s))} />
+            </Field>
+            <Field label="Codeforces link">
+              <input className={field} value={site.socials.codeforces ?? ""} onChange={(e) => update((s) => ((s.socials.codeforces = e.target.value), s))} />
+            </Field>
           </div>
         </Card>
 

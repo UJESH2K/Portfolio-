@@ -26,7 +26,7 @@ export const NEEDS_INPUT = "NEEDS_INPUT" as const;
 export type NewsItem = { id: string; date: string; tag: string; text: string; href?: string };
 export type SiteOverrides = {
   youtube: { channel: string; handle: string; latestVideo: { url: string; title: string } };
-  socials: { x: string; facebook: string };
+  socials: { x: string; facebook: string; codechef?: string; codeforces?: string };
   news: NewsItem[];
   featured: string[];
   projects: WorkItem[];
@@ -35,6 +35,11 @@ export type SiteOverrides = {
 };
 export const SITE = siteJson as unknown as SiteOverrides;
 const orMissing = (v?: string) => (v && v.trim() ? v.trim() : NEEDS_INPUT);
+/** "@name" from a profile link's last path segment. */
+const handleOf = (url?: string) => {
+  const last = url?.trim().replace(/\/+$/, "").split("/").pop();
+  return last ? `@${last.replace(/^@/, "")}` : "";
+};
 
 /** True when a value is still an unfilled placeholder. */
 export const isMissing = (v?: string): boolean =>
@@ -73,7 +78,7 @@ export const STATS: Stat[] = [
   { value: "20×", label: "National-level finals" },
   { value: "50+", label: "Hackathons entered" },
   { value: "65+", label: "Public projects" },
-  { value: "1700", label: "CodeChef rating" },
+  { value: "3★", label: "CodeChef (max 1631)" },
 ];
 
 // ─── Socials ─────────────────────────────────────────────────────────────
@@ -120,9 +125,23 @@ export const SOCIALS: Social[] = [
   {
     id: "x",
     label: "X (Twitter)",
-    handle: orMissing(SITE.socials.x ? "X" : ""),
+    handle: orMissing(handleOf(SITE.socials.x)),
     href: orMissing(SITE.socials.x),
     color: "#e7e9ea",
+  },
+  {
+    id: "codechef",
+    label: "CodeChef",
+    handle: orMissing(handleOf(SITE.socials.codechef)),
+    href: orMissing(SITE.socials.codechef),
+    color: "#a86544",
+  },
+  {
+    id: "codeforces",
+    label: "Codeforces",
+    handle: orMissing(handleOf(SITE.socials.codeforces)),
+    href: orMissing(SITE.socials.codeforces),
+    color: "#1f8acb",
   },
   {
     id: "facebook",
@@ -165,19 +184,19 @@ export const CP_PROFILES: CpProfile[] = [
   {
     id: "codeforces",
     platform: "Codeforces",
-    handle: NEEDS_INPUT,
-    rating: NEEDS_INPUT,
+    handle: "UJESH2K",
+    rating: "1096",
     rank: NEEDS_INPUT,
-    profileUrl: NEEDS_INPUT,
+    profileUrl: "https://codeforces.com/profile/UJESH2K",
     color: "#1f8acb",
   },
   {
     id: "codechef",
     platform: "CodeChef",
-    handle: NEEDS_INPUT,
-    rating: NEEDS_INPUT,
-    rank: NEEDS_INPUT,
-    profileUrl: NEEDS_INPUT,
+    handle: "james_tmrocket",
+    rating: "1631 (max)",
+    rank: "3★",
+    profileUrl: "https://www.codechef.com/users/james_tmrocket",
     color: "#a86544",
   },
   {
