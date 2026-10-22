@@ -4502,3 +4502,105 @@ button.plink {
     color: #fff;
   }
 }
+
+/* Carousel extras: repo covers, sheen, reflections, autoplay progress. */
+.rcover {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 120% at 100% 0%, color-mix(in srgb, var(--lang) 55%, transparent), transparent 60%),
+    linear-gradient(160deg, color-mix(in srgb, var(--lang) 22%, #f6f4ee), #ece9e1);
+}
+.rcover__mono {
+  position: absolute;
+  right: -6px;
+  bottom: -26px;
+  font-family: var(--font-h);
+  font-weight: 700;
+  font-size: 118px;
+  letter-spacing: -0.06em;
+  line-height: 1;
+  color: color-mix(in srgb, var(--lang) 40%, transparent);
+}
+.rcover__lang {
+  position: absolute;
+  left: 16px;
+  top: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 9px 5px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  font-family: var(--font-m);
+  font-size: 11px;
+  color: #0d0d0d;
+}
+.rcover__lang i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--lang);
+}
+.rcover__stars {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  font-family: var(--font-m);
+  font-size: 11px;
+  color: #0d0d0d;
+}
+.acard {
+  -webkit-box-reflect: below 10px linear-gradient(transparent 72%, rgba(0, 0, 0, 0.16));
+}
+.acard__sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(420px circle at var(--sx, 50%) var(--sy, 50%), rgba(255, 255, 255, 0.55), transparent 45%);
+  mix-blend-mode: soft-light;
+  transition: opacity 0.4s var(--ease);
+}
+.archive__stage.is-held .acard.is-front .acard__sheen {
+  opacity: 1;
+}
+.acard.is-front {
+  box-shadow:
+    0 40px 70px -34px rgba(0, 0, 0, 0.55),
+    0 0 0 1px var(--ink);
+}
+.archive__num,
+.archive__name,
+.archive__state {
+  display: block;
+}
+.archive__name {
+  margin-top: 4px;
+  font-family: var(--font-h);
+  font-size: 16px;
+  color: var(--ink);
+  text-transform: capitalize;
+}
+.archive__progress {
+  position: relative;
+  display: block;
+  height: 2px;
+  margin: 10px auto 6px;
+  width: 140px;
+  background: var(--line);
+  overflow: hidden;
+}
+.archive__progress i {
+  position: absolute;
+  inset: 0;
+  background: var(--ember);
+  transform-origin: left;
+  transform: scaleX(0);
+}
+.archive__state {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}

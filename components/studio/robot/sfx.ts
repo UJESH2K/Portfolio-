@@ -10,8 +10,16 @@ import { useRobot } from "@/lib/robot";
 
 let ctx: AudioContext | null = null;
 
+/** Parts of the page that ask for quiet while the pointer is on them (the
+ *  projects carousel): no sounds play while any of them holds. */
+const holds = new Set<string>();
+export function setSfxHold(key: string, on: boolean) {
+  if (on) holds.add(key);
+  else holds.delete(key);
+}
+
 function audio(): AudioContext | null {
-  if (useRobot.getState().muted) return null;
+  if (useRobot.getState().muted || holds.size) return null;
   if (typeof window === "undefined") return null;
   if (!ctx) {
     const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
