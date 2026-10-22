@@ -86,14 +86,15 @@ function TunnelCard({
   const opacity = useTransform(local, [0, 0.18, 0.82, 0.98], [0, 1, 1, 0]);
 
   const cardWidth = stage.isMobile ? Math.max(130, Math.min(180, stage.width * 0.38)) : Math.max(190, Math.min(280, stage.width * 0.18));
-  const baseX = g.angleCos * (stage.width * g.radiusFactorX);
-  const baseY = g.angleSin * (stage.height * g.radiusFactorY);
+  // Rounded so the server and browser render the same value.
+  const baseX = Math.round(g.angleCos * (stage.width * g.radiusFactorX) * 10) / 10;
+  const baseY = Math.round(g.angleSin * (stage.height * g.radiusFactorY) * 10) / 10;
   const panStrength = stage.isMobile ? 20 : 45;
 
   const transform = useTransform([z, pointer.x, pointer.y], ([currZ, px, py]: number[]) => {
     const ox = baseX - px * panStrength;
     const oy = baseY - py * panStrength;
-    return `translate3d(calc(-50% + ${ox}px), calc(-50% + ${oy}px), ${currZ}px) rotateZ(${g.rotationZ}deg)`;
+    return `translate3d(calc(-50% + ${ox.toFixed(1)}px), calc(-50% + ${oy.toFixed(1)}px), ${currZ.toFixed(1)}px) rotateZ(${g.rotationZ}deg)`;
   });
   // Hidden entirely while invisible, so far-off cards cost nothing.
   const visibility = useTransform(opacity, (o) => (o < 0.01 ? "hidden" : "visible"));

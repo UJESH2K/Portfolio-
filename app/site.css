@@ -3898,167 +3898,6 @@ button.plink {
   font-size: 14px;
   color: var(--fg-2);
 }
-.archive__bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-.archive__bar .work__filters {
-  margin: 0;
-}
-.archive__search input {
-  width: min(320px, 80vw);
-  padding: 11px 16px 12px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--white);
-  font: inherit;
-  font-size: 14px;
-  color: var(--ink);
-}
-.archive__search input:focus {
-  outline: none;
-  border-color: var(--ink);
-}
-.archive__stage {
-  position: relative;
-  height: clamp(380px, 52vh, 470px);
-  margin: 18px calc(var(--gutter) * -1) 0;
-  perspective: 1400px;
-  perspective-origin: 50% 45%;
-  overflow: hidden;
-  touch-action: pan-y;
-  cursor: grab;
-  user-select: none;
-  outline: none;
-}
-.archive__stage:active {
-  cursor: grabbing;
-}
-.archive__stage:focus-visible {
-  box-shadow: inset 0 0 0 2px var(--ink);
-  border-radius: 8px;
-}
-.archive__empty {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  color: var(--fg-2);
-}
-.acard {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 300px;
-  height: 360px;
-  display: flex;
-  flex-direction: column;
-  border-radius: 10px;
-  overflow: hidden;
-  background: var(--white);
-  border: 1px solid var(--line);
-  box-shadow: 0 20px 40px -26px rgba(0, 0, 0, 0.35);
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-  transition: box-shadow 0.4s var(--ease), border-color 0.4s var(--ease);
-  will-change: transform;
-}
-.acard.is-front {
-  border-color: var(--ink);
-  box-shadow: 0 34px 60px -30px rgba(0, 0, 0, 0.5);
-  cursor: pointer;
-}
-.acard__media {
-  position: relative;
-  flex: none;
-  height: 170px;
-  overflow: hidden;
-  background: var(--paper-2);
-}
-.acard__media img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top center;
-  pointer-events: none;
-}
-.acard--repo .acard__media {
-  height: 120px;
-}
-.acard__body {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 16px 18px 18px;
-  min-height: 0;
-}
-.acard__label {
-  font-family: var(--font-m);
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--ember-deep);
-}
-.acard__label span {
-  color: var(--fg-2);
-}
-.acard__title {
-  font-family: var(--font-h);
-  font-weight: 500;
-  font-size: 21px;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  text-transform: capitalize;
-}
-.acard__text {
-  font-size: 13.5px;
-  line-height: 1.45;
-  color: var(--fg-2);
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.pcover--small {
-  padding: 16px 18px;
-}
-.pcover--small .pcover__kind {
-  top: 14px;
-  left: 18px;
-}
-.pcover--small .pcover__stat {
-  font-size: 26px;
-  text-transform: capitalize;
-}
-.archive__nav {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 14px;
-  flex-wrap: wrap;
-}
-.archive__count {
-  min-width: 200px;
-  text-align: center;
-  font-family: var(--font-m);
-  font-size: 12px;
-  color: var(--fg-2);
-}
-.archive__count span {
-  display: block;
-  margin-top: 4px;
-  font-family: var(--font-h);
-  font-size: 16px;
-  color: var(--ink);
-  text-transform: capitalize;
-}
-
 /* The details window */
 .pmodal {
   position: fixed;
@@ -4192,16 +4031,6 @@ button.plink {
   }
   .fcardp .pcard__title {
     font-size: 17px;
-  }
-  .acard {
-    width: 240px;
-    height: 330px;
-  }
-  .acard__media {
-    height: 140px;
-  }
-  .archive__stage {
-    height: 380px;
   }
 }
 
@@ -4367,223 +4196,247 @@ button.plink {
   }
 }
 
-/* Carousel extras: repo covers, sheen, reflections, autoplay progress. */
-.rcover {
-  position: absolute;
-  inset: 0;
+/* ─── The GitHub world: every project and repo, in GitHub's dark ─────── */
+
+.ghw {
+  --gh-bg: #0d1117;
+  --gh-card: #161b22;
+  --gh-border: #30363d;
+  --gh-text: #e6edf3;
+  --gh-muted: #7d8590;
+  --gh-link: #4493f8;
+  position: relative;
+  margin: 14px calc(var(--gutter) * -0.5) 0;
+  border: 1px solid var(--gh-border);
+  border-radius: var(--portal-radius, 14px);
+  background: var(--gh-bg);
+  color: var(--gh-text);
   overflow: hidden;
-  background:
-    radial-gradient(120% 120% at 100% 0%, color-mix(in srgb, var(--lang) 55%, transparent), transparent 60%),
-    linear-gradient(160deg, color-mix(in srgb, var(--lang) 22%, #f6f4ee), #ece9e1);
+  transform: scale(var(--portal-scale, 1));
+  transform-origin: 50% 50%;
+  box-shadow: 0 50px 100px -50px rgba(0, 0, 0, 0.6);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
 }
-.rcover__mono {
-  position: absolute;
-  right: -6px;
-  bottom: -26px;
-  font-family: var(--font-h);
-  font-weight: 700;
-  font-size: 118px;
-  letter-spacing: -0.06em;
-  line-height: 1;
-  color: color-mix(in srgb, var(--lang) 40%, transparent);
+.ghw--loading {
+  height: min(78vh, 760px);
 }
-.rcover__lang {
+.ghw__chrome {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--gh-border);
+  background: #010409;
+}
+.ghw__mark {
+  display: grid;
+  color: var(--gh-text);
+}
+.ghw__path {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gh-text);
+}
+.ghw__path span {
+  color: var(--gh-muted);
+  font-weight: 400;
+  margin: 0 2px;
+}
+.ghw__path:hover {
+  color: var(--gh-link);
+}
+.ghw__count {
+  padding: 1px 8px;
+  border: 1px solid var(--gh-border);
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--gh-muted);
+}
+.ghw__tabs,
+.ghw__view {
+  display: flex;
+  border: 1px solid var(--gh-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.ghw__tabs {
+  margin-left: auto;
+}
+.ghw__tabs button,
+.ghw__view button {
+  display: grid;
+  place-items: center;
+  padding: 5px 12px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--gh-muted);
+  background: transparent;
+}
+.ghw__tabs button + button,
+.ghw__view button + button {
+  border-left: 1px solid var(--gh-border);
+}
+.ghw__tabs button[aria-pressed="true"],
+.ghw__view button[aria-pressed="true"] {
+  background: var(--gh-card);
+  color: var(--gh-text);
+}
+.ghw__search {
+  width: min(240px, 100%);
+  padding: 5px 12px;
+  border: 1px solid var(--gh-border);
+  border-radius: 6px;
+  background: var(--gh-bg);
+  color: var(--gh-text);
+  font: inherit;
+  font-size: 13px;
+}
+.ghw__search:focus {
+  outline: 2px solid var(--gh-link);
+  outline-offset: -1px;
+}
+.ghw__stage {
+  position: relative;
+  height: min(72vh, 700px);
+  touch-action: pan-y;
+}
+.ghw__stage.is-live {
+  cursor: grab;
+}
+.ghw__stage.is-live:active {
+  cursor: grabbing;
+}
+.ghw__hint {
   position: absolute;
   left: 16px;
-  top: 14px;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 9px 5px 7px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.78);
-  font-family: var(--font-m);
-  font-size: 11px;
-  color: #0d0d0d;
+  bottom: 14px;
+  font-size: 12px;
+  color: var(--gh-muted);
+  pointer-events: none;
 }
-.rcover__lang i {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--lang);
-}
-.rcover__stars {
+.ghw__tools {
   position: absolute;
   right: 14px;
-  top: 14px;
-  font-family: var(--font-m);
-  font-size: 11px;
-  color: #0d0d0d;
+  bottom: 12px;
+  display: flex;
+  gap: 6px;
 }
-.acard {
-  -webkit-box-reflect: below 10px linear-gradient(transparent 72%, rgba(0, 0, 0, 0.16));
+.ghw__tools button,
+.ghw__done {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--gh-border);
+  border-radius: 6px;
+  background: var(--gh-card);
+  color: var(--gh-text);
 }
-.acard__sheen {
+.ghw__tools button:hover {
+  border-color: var(--gh-muted);
+}
+.ghw__explore {
   position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0;
-  background: radial-gradient(420px circle at var(--sx, 50%) var(--sy, 50%), rgba(255, 255, 255, 0.55), transparent 45%);
-  mix-blend-mode: soft-light;
-  transition: opacity 0.4s var(--ease);
+  left: 50%;
+  top: 16px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: #238636;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 10px 30px -10px rgba(35, 134, 54, 0.8);
 }
-.archive__stage.is-held .acard.is-front .acard__sheen {
-  opacity: 1;
+.ghw__done {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: auto;
+  padding: 0 14px;
+  font-size: 13px;
 }
-.acard.is-front {
-  box-shadow:
-    0 40px 70px -34px rgba(0, 0, 0, 0.55),
-    0 0 0 1px var(--ink);
+.ghw__list {
+  max-height: min(72vh, 700px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
-.archive__num,
-.archive__name,
-.archive__state {
-  display: block;
+.ghw__list li + li {
+  border-top: 1px solid var(--gh-border);
 }
-.archive__name {
-  margin-top: 4px;
-  font-family: var(--font-h);
-  font-size: 16px;
-  color: var(--ink);
+.ghw__list button {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding: 16px 20px;
+  text-align: left;
+  color: var(--gh-text);
+  background: transparent;
+}
+.ghw__list button:hover {
+  background: var(--gh-card);
+}
+.ghw__lname {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--gh-link);
   text-transform: capitalize;
 }
-.archive__progress {
-  position: relative;
-  display: block;
-  height: 2px;
-  margin: 10px auto 6px;
-  width: 140px;
-  background: var(--line);
-  overflow: hidden;
-}
-.archive__progress i {
-  position: absolute;
-  inset: 0;
-  background: var(--ember);
-  transform-origin: left;
-  transform: scaleX(0);
-}
-.archive__state {
-  font-size: 10.5px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-/* The build tunnel's title keeps the site's heading face. */
-.build-tunnel h2 {
-  font-family: var(--font-h);
+.ghw__lname em {
+  font-style: normal;
+  font-size: 11px;
   font-weight: 500;
-  letter-spacing: -0.05em;
+  padding: 0 7px;
+  border: 1px solid var(--gh-border);
+  border-radius: 999px;
+  color: var(--gh-muted);
+  text-transform: none;
 }
-
-/* ─── Horizontal runs: compact, and clear of the header and bottom bar ── */
-
-/* The run sits between the fixed header (top) and the clock/Sound bar
-   (bottom); its progress line rides above that bar, never on it. */
-.htrack__pin {
-  padding: 96px 0 104px;
-  box-sizing: border-box;
+.ghw__ldesc {
+  font-size: 14px;
+  color: var(--gh-muted);
 }
-.htrack__bar {
-  bottom: 64px;
+.ghw__lmeta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--gh-muted);
 }
-.htrack__label {
-  bottom: 10px;
-  font-size: 10.5px;
+.ghw__lmeta i {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  margin-right: -8px;
 }
-.htrack__rail {
-  gap: clamp(16px, 1.6vw, 28px);
+.ghw__none {
+  padding: 30px 20px;
+  color: var(--gh-muted);
 }
-.hpanel {
-  width: min(420px, 30vw);
-  gap: 16px;
-}
-.hpanel .h2 {
-  font-size: clamp(30px, 3vw, 46px);
-}
-.hpanel .lede {
-  font-size: 15px;
-}
-.hcard {
-  width: min(380px, 27vw);
-  max-height: calc(100svh - 220px);
-  border-radius: 10px;
-}
-.hcard__fig {
-  aspect-ratio: 16 / 7;
-}
-.hcard__body {
-  gap: 9px;
-  padding: 18px 20px 20px;
-  overflow: hidden;
-}
-.hcard__title {
-  font-size: clamp(20px, 1.7vw, 26px);
-}
-.hcard__sub {
-  font-size: 15px;
-}
-.hcard .irow__points li {
-  font-size: 13px;
-  line-height: 1.45;
-  padding-left: 18px;
-}
-.hcard .irow__points li + li {
-  margin-top: 6px;
-}
-.lcard {
-  width: min(300px, 23vw);
-  min-height: 0;
-  height: min(380px, calc(100svh - 240px));
-}
-.lcard .lcard__stat b {
-  font-size: clamp(36px, 3.2vw, 50px);
-}
-.lcard .lrow__text {
-  font-size: 13.5px;
-}
-.hphoto {
-  height: min(46vh, 420px);
-  border-radius: 10px;
-}
-.htrack .rcard {
-  width: min(320px, 24vw);
-  max-height: calc(100svh - 220px);
-  border-radius: 10px;
-}
-.htrack .rcard__meta {
-  padding: 10px 12px;
-}
-.htrack .rcard__txt {
-  padding: 16px 18px 18px;
-  gap: 7px;
-}
-.htrack .rcard__title {
-  font-size: clamp(16px, 1.25vw, 19px);
-}
-.htrack .rcard__venue {
-  font-size: 12.5px;
-}
-.htrack .rcard__text {
-  font-size: 13px;
-  line-height: 1.45;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.htrack .pill {
-  font-size: 10px;
-  padding: 5px 7px;
-}
-@media (max-width: 809px), (prefers-reduced-motion: reduce) {
-  .htrack__pin {
-    padding: clamp(80px, 12vh, 120px) 0;
+@media (max-width: 809px) {
+  .ghw {
+    margin-left: calc(var(--gutter) * -1);
+    margin-right: calc(var(--gutter) * -1);
   }
-  .hcard,
-  .lcard,
-  .htrack .rcard {
-    height: auto;
-    max-height: none;
+  .ghw__tabs {
+    margin-left: 0;
+  }
+  .ghw__search {
+    width: 100%;
+    order: 9;
+  }
+  .ghw__stage {
+    height: 68vh;
+  }
+  .ghw__hint {
+    display: none;
   }
 }
