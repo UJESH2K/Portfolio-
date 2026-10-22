@@ -4,6 +4,7 @@ import "./globals.css";
 import "./site.css";
 import { FAQS, PROFILE, SOCIALS, WORK } from "@/lib/content";
 import { SITE_URL } from "@/lib/site";
+import { Analytics } from '@vercel/analytics/next';
 
 // Three faces, one job each:
 //   Cabinet Grotesk — headings (Fontshare, ITF Free Font License)
@@ -171,6 +172,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personLd) }}
         />
         {children}
+        <Analytics />
       </body>
     </html>
   );
