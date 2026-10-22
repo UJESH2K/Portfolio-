@@ -9,7 +9,7 @@ import RobotLayer from "@/components/studio/robot/RobotLayer";
 import Signals from "@/components/studio/sections/Signals";
 import Statement from "@/components/studio/sections/Statement";
 import Story from "@/components/studio/sections/Story";
-import BuildOrbit from "@/components/studio/sections/BuildOrbit";
+import BuildTunnel from "@/components/studio/sections/BuildTunnel";
 import Skills from "@/components/studio/sections/Skills";
 import SelectedWork from "@/components/studio/sections/SelectedWork";
 import About from "@/components/studio/sections/About";
@@ -46,7 +46,7 @@ export default async function Home() {
         <Signals />
         <Statement />
         <Story />
-        <BuildOrbit />
+        <BuildTunnel />
         <Internships />
         <Clients />
         <SelectedWork repos={repos} />

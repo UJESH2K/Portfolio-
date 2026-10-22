@@ -5,7 +5,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 /**
  * A horizontal stretch in a vertical page: the section pins to the screen
  * and scrolling down slides its row of panels right to left, with a line
- * along the bottom filling as you go. Built like BuildOrbit: a sticky frame
+ * along the bottom filling as you go. Built like the build tunnel: a sticky frame
  * inside a section made exactly as tall as the row is wide, so it never
  * fights Lenis. Phones and reduced motion get the panels stacked normally.
  */

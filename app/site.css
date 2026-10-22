@@ -1129,111 +1129,6 @@
   opacity: 1;
 }
 
-/* ─── Build orbit (pinned flythrough) ───────────────────────────────── */
-
-.orbit {
-  position: relative;
-  height: 500vh;
-}
-.orbit__pin {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow: hidden;
-  perspective: 1100px;
-  perspective-origin: 50% 50%;
-}
-.orbit__track {
-  position: absolute;
-  inset: 0;
-  transform-style: preserve-3d;
-}
-.orbit__tile {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: var(--w);
-  margin-left: calc(var(--w) / -2);
-  aspect-ratio: var(--ratio);
-  margin-top: calc(var(--w) / var(--ar) / -2);
-  will-change: transform, opacity;
-  opacity: 0;
-  backface-visibility: hidden;
-}
-.orbit__tile--media {
-  border-radius: 3px;
-  overflow: hidden;
-  background: var(--paper-2);
-}
-.orbit__tile--media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.orbit__tile--card {
-  background: var(--black);
-  color: var(--white);
-  border-radius: 3px;
-  padding: clamp(16px, 1.6vw, 24px);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-.orbit__num {
-  font-family: var(--font-m);
-  font-size: 12px;
-  color: var(--ember);
-}
-.orbit__title {
-  font-family: var(--font-h);
-  font-weight: 500;
-  font-size: clamp(19px, 1.7vw, 26px);
-  letter-spacing: -0.02em;
-  line-height: 1.05;
-}
-.orbit__sub {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.55);
-  margin-top: 6px;
-}
-.orbit__desc {
-  font-size: 14px;
-  line-height: 1.4;
-  margin-top: 12px;
-  color: rgba(255, 255, 255, 0.86);
-}
-.orbit__center {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 32px;
-  text-align: center;
-  z-index: 2;
-  pointer-events: none;
-}
-.orbit__center .cta {
-  pointer-events: auto;
-  background: var(--paper);
-}
-.orbit__title-big {
-  font-family: var(--font-h);
-  font-weight: 500;
-  font-size: clamp(56px, 7.6vw, 128px);
-  letter-spacing: -0.05em;
-  line-height: 0.9;
-}
-.orbit__count {
-  position: absolute;
-  left: var(--gutter);
-  bottom: 80px;
-  font-family: var(--font-m);
-  font-size: 12px;
-  color: var(--fg-2);
-  z-index: 2;
-}
-
 /* ─── Skills ────────────────────────────────────────────────────────── */
 
 .skills {
@@ -2190,9 +2085,6 @@
     grid-template-columns: 1fr;
     gap: 20px;
   }
-  .orbit {
-    height: 400vh;
-  }
   .about__stage {
     grid-template-columns: 1fr;
   }
@@ -2272,34 +2164,6 @@
   }
   .scrub .ch {
     opacity: 1 !important;
-  }
-  .orbit {
-    height: auto;
-  }
-  .orbit__pin {
-    position: relative;
-    height: auto;
-    perspective: none;
-    padding: 120px 0;
-  }
-  .orbit__track {
-    position: relative;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 16px;
-    padding: 40px var(--gutter) 0;
-  }
-  .orbit__tile {
-    position: relative;
-    left: auto;
-    top: auto;
-    margin: 0;
-    width: auto;
-    opacity: 1;
-    transform: none !important;
-  }
-  .orbit__center {
-    position: relative;
   }
   .wins__slide img {
     transition: none;
@@ -4603,4 +4467,123 @@ button.plink {
   font-size: 10.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+/* The build tunnel's title keeps the site's heading face. */
+.build-tunnel h2 {
+  font-family: var(--font-h);
+  font-weight: 500;
+  letter-spacing: -0.05em;
+}
+
+/* ─── Horizontal runs: compact, and clear of the header and bottom bar ── */
+
+/* The run sits between the fixed header (top) and the clock/Sound bar
+   (bottom); its progress line rides above that bar, never on it. */
+.htrack__pin {
+  padding: 96px 0 104px;
+  box-sizing: border-box;
+}
+.htrack__bar {
+  bottom: 64px;
+}
+.htrack__label {
+  bottom: 10px;
+  font-size: 10.5px;
+}
+.htrack__rail {
+  gap: clamp(16px, 1.6vw, 28px);
+}
+.hpanel {
+  width: min(420px, 30vw);
+  gap: 16px;
+}
+.hpanel .h2 {
+  font-size: clamp(30px, 3vw, 46px);
+}
+.hpanel .lede {
+  font-size: 15px;
+}
+.hcard {
+  width: min(380px, 27vw);
+  max-height: calc(100svh - 220px);
+  border-radius: 10px;
+}
+.hcard__fig {
+  aspect-ratio: 16 / 7;
+}
+.hcard__body {
+  gap: 9px;
+  padding: 18px 20px 20px;
+  overflow: hidden;
+}
+.hcard__title {
+  font-size: clamp(20px, 1.7vw, 26px);
+}
+.hcard__sub {
+  font-size: 15px;
+}
+.hcard .irow__points li {
+  font-size: 13px;
+  line-height: 1.45;
+  padding-left: 18px;
+}
+.hcard .irow__points li + li {
+  margin-top: 6px;
+}
+.lcard {
+  width: min(300px, 23vw);
+  min-height: 0;
+  height: min(380px, calc(100svh - 240px));
+}
+.lcard .lcard__stat b {
+  font-size: clamp(36px, 3.2vw, 50px);
+}
+.lcard .lrow__text {
+  font-size: 13.5px;
+}
+.hphoto {
+  height: min(46vh, 420px);
+  border-radius: 10px;
+}
+.htrack .rcard {
+  width: min(320px, 24vw);
+  max-height: calc(100svh - 220px);
+  border-radius: 10px;
+}
+.htrack .rcard__meta {
+  padding: 10px 12px;
+}
+.htrack .rcard__txt {
+  padding: 16px 18px 18px;
+  gap: 7px;
+}
+.htrack .rcard__title {
+  font-size: clamp(16px, 1.25vw, 19px);
+}
+.htrack .rcard__venue {
+  font-size: 12.5px;
+}
+.htrack .rcard__text {
+  font-size: 13px;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.htrack .pill {
+  font-size: 10px;
+  padding: 5px 7px;
+}
+@media (max-width: 809px), (prefers-reduced-motion: reduce) {
+  .htrack__pin {
+    padding: clamp(80px, 12vh, 120px) 0;
+  }
+  .hcard,
+  .lcard,
+  .htrack .rcard {
+    height: auto;
+    max-height: none;
+  }
 }
