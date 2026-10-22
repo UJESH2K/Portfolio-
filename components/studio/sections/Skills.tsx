@@ -2,12 +2,10 @@ import type { CSSProperties } from "react";
 import { SKILL_GROUPS } from "@/lib/content";
 import { RESUME } from "@/lib/resume";
 import { Cta, Eyebrow, SplitWords } from "../primitives";
-import BgWord from "../BgWord";
 
 export default function Skills() {
   return (
-    <section id="skills" className="skills has-bgword" aria-labelledby="skills-title">
-      <BgWord text="The stack" />
+    <section id="skills" className="skills" aria-labelledby="skills-title">
       <div className="wrap">
         <div className="skills__head">
           <div>

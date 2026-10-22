@@ -1,7 +1,8 @@
 import SmoothScroll from "@/components/site/SmoothScroll";
 import RevealObserver from "@/components/studio/RevealObserver";
 import ScrollFx from "@/components/studio/ScrollFx";
-import Cursor from "@/components/studio/Cursor";
+import SmoothCursor from "@/components/ui/smooth-cursor";
+import Band from "@/components/studio/BgWord";
 import Preloader from "@/components/studio/Preloader";
 import Chrome from "@/components/studio/Chrome";
 import Hero from "@/components/studio/Hero";
@@ -25,20 +26,19 @@ import Feed from "@/components/studio/sections/Feed";
 import OffClock from "@/components/studio/sections/OffClock";
 import Faq from "@/components/studio/sections/Faq";
 import Footer from "@/components/studio/sections/Footer";
-import { getPosts } from "@/lib/getContent";
 import { getRepos } from "@/lib/github";
 
 export const revalidate = 60;
 
 export default async function Home() {
-  const [posts, repos] = await Promise.all([getPosts(), getRepos()]);
+  const repos = await getRepos();
 
   return (
     <div className="site">
       <SmoothScroll />
       <RevealObserver />
       <ScrollFx />
-      <Cursor />
+      <SmoothCursor />
       <Preloader />
       <Chrome />
       <RobotLayer />
@@ -49,19 +49,25 @@ export default async function Home() {
       <main id="main" className="paper">
         <Signals />
         <Statement />
+        <Band index="01" label="Where it started" text="The story" />
         <Story />
         <BuildTunnel />
         <Internships />
         <Clients />
+        <Band index="02" label="Things I shipped" text="Selected work" reverse />
         <SelectedWork repos={repos} />
+        <Band index="03" label="What I build with" text="The stack" />
         <Skills />
         <About />
         <Leadership />
+        <Band index="04" label="Hackathons & awards" text="Wins" reverse />
         <Wins />
         <HackWall />
         <Research />
-        <Feed posts={posts} />
+        <Band index="05" label="Around the internet" text="Build in public" />
+        <Feed />
         <OffClock />
+        <Band index="06" label="Ask me anything" text="Questions" reverse />
         <Faq />
         <Footer />
       </main>

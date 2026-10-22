@@ -1,7 +1,6 @@
 import type { CSSProperties } from "react";
 import { FEED_INTRO, PROFILE, SOCIALS, SOCIAL_POSTS, isMissing, type Post } from "@/lib/content";
 import { ArrowIcon, Eyebrow, SplitWords } from "../primitives";
-import BgWord from "../BgWord";
 
 const NOTES: Record<string, string> = {
   github: `${PROFILE.publicRepos}+ public projects, from GPU meshes to hackathon builds.`,
@@ -23,17 +22,16 @@ const PLATFORM_LABEL: Record<string, string> = {
 };
 
 /**
- * Around the internet. Highlighted posts (SOCIAL_POSTS in content.ts, plus
- * posts added from /admin) come first; profile cards fill the rest, so the
+ * Around the internet. Highlighted posts (SOCIAL_POSTS in content.ts) come
+ * first; profile cards fill the rest, so the
  * section is never empty while the posts list is.
  */
-export default function Feed({ posts }: { posts: Post[] }) {
+export default function Feed({ posts = [] }: { posts?: Post[] }) {
   const profiles = SOCIALS.filter((s) => s.id !== "email" && !isMissing(s.href) && !isMissing(s.handle));
   const adminPosts = posts.filter((p) => p.linkUrl);
 
   return (
-    <section id="feed" className="feed has-bgword" data-cue="feed" aria-labelledby="feed-title">
-      <BgWord text="Build in public" />
+    <section id="feed" className="feed" data-cue="feed" aria-labelledby="feed-title">
       <div className="wrap">
         <div className="feed__head">
           <div>

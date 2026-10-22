@@ -4293,8 +4293,97 @@ button.plink--solid {
   font-size: 11px;
   color: var(--fg-2);
 }
+.korb__spot {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 24px;
+}
+.korb__spot button {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  padding: 14px 14px 13px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+  transition: border-color 0.3s var(--ease), background 0.3s var(--ease), transform 0.4s var(--ease);
+}
+@media (hover: hover) {
+  .korb__spot button:hover {
+    border-color: var(--ink);
+    background: var(--white);
+    transform: translateY(-3px);
+  }
+}
+.korb__spottag {
+  font-family: var(--font-m);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ember-deep);
+}
+.korb__spotname {
+  font-family: var(--font-h);
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-transform: capitalize;
+  overflow-wrap: anywhere;
+}
+.korb__spotmeta {
+  margin-top: auto;
+  font-family: var(--font-m);
+  font-size: 11px;
+  color: var(--fg-2);
+}
+.korb__langs {
+  margin-top: 20px;
+}
+.korb__langbar {
+  display: flex;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--line);
+}
+.korb__langbar i {
+  height: 100%;
+}
+.korb__langbar i + i {
+  border-left: 2px solid var(--paper);
+}
+.korb__langs p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 10px;
+  font-family: var(--font-m);
+  font-size: 11px;
+  color: var(--fg-2);
+}
+.korb__langs p span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.korb__langs p i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.korb__langs em {
+  font-style: normal;
+  color: var(--fg-3);
+}
 .korb__card {
-  margin-top: 26px;
+  margin-top: 22px;
   padding: 20px 22px 18px;
   border: 1px solid var(--line);
   border-radius: 18px;
@@ -4417,6 +4506,9 @@ button.plink--solid {
   .korb {
     grid-template-columns: 1fr;
   }
+  .korb__spot {
+    grid-template-columns: 1fr;
+  }
   .korb__ball {
     height: min(92vw, 460px);
   }
@@ -4477,13 +4569,32 @@ button.plink--solid {
 .sw--mk.is-in > span {
   background-size: 100% 0.42em;
 }
+/* The name: heavy ink, with an outlined echo of itself sliding out behind. */
 .hero__name {
-  font-family: var(--font-s);
-  font-style: italic;
-  font-weight: 400;
-  font-size: 1.1em;
-  letter-spacing: -0.015em;
-  color: var(--ember-deep);
+  position: relative;
+  display: inline-block;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  isolation: isolate;
+}
+.hero__name::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: -1;
+  color: transparent;
+  -webkit-text-stroke: 1.2px var(--ink);
+  transform: translate(0.06em, 0.06em);
+  animation: name-echo 1.2s var(--ease) both;
+}
+@keyframes name-echo {
+  from {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
 }
 /* The statement inks in with its key words in the serif. */
 .lede em,
@@ -4492,57 +4603,70 @@ button.plink--solid {
   font-style: italic;
 }
 
-/* ─── Background words that slide with the scroll ────────────────────── */
+/* ─── Section bands: a huge word that closes one section, opens the next ── */
 
-.has-bgword {
+.sband {
   position: relative;
-  isolation: isolate;
-}
-.bgword {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: clamp(20px, 6vh, 70px);
-  z-index: -1;
   overflow: hidden;
-  pointer-events: none;
+  padding: clamp(18px, 3vw, 34px) 0 clamp(10px, 2vw, 22px);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
   user-select: none;
 }
-.bgword span {
-  display: block;
+.sband__meta {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 var(--gutter);
+  font-family: var(--font-m);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+.sband__track > span {
+  display: flex;
+  width: max-content;
   white-space: nowrap;
-  font-family: var(--font-h);
-  font-weight: 700;
-  font-size: clamp(110px, 19vw, 320px);
-  line-height: 0.9;
-  letter-spacing: -0.05em;
-  color: transparent;
-  -webkit-text-stroke: 1.5px var(--line);
-  transform: translate3d(calc(-8% - var(--p, 0.5) * 30%), 0, 0);
+  transform: translate3d(calc(-6% - var(--p, 0.5) * 22%), 0, 0);
   will-change: transform;
 }
-.bgword--rev span {
-  transform: translate3d(calc(-38% + var(--p, 0.5) * 30%), 0, 0);
+.sband--rev .sband__track > span {
+  transform: translate3d(calc(-28% + var(--p, 0.5) * 22%), 0, 0);
 }
-.bgword i {
+.sband__track > span > span {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25em;
+  padding-right: 0.25em;
+  font-size: clamp(84px, 14vw, 230px);
+  line-height: 1;
+}
+.sband b {
+  font-family: var(--font-h);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  color: var(--ink);
+}
+.sband i {
   font-family: var(--font-s);
   font-weight: 400;
   letter-spacing: -0.02em;
-  -webkit-text-stroke: 0;
-  color: var(--line);
-  opacity: 0.4;
+  color: transparent;
+  -webkit-text-stroke: 1.2px var(--fg-3);
 }
-.theme-green .bgword span,
-.theme-dark .bgword span {
-  -webkit-text-stroke-color: rgba(255, 255, 255, 0.09);
-}
-.theme-green .bgword i,
-.theme-dark .bgword i {
-  color: rgba(255, 255, 255, 0.06);
+.sband em {
+  font-style: normal;
+  font-size: 0.4em;
+  color: var(--ember);
+  align-self: center;
 }
 @media (max-width: 809px) {
-  .bgword span {
-    font-size: 30vw;
+  .sband__track > span > span {
+    font-size: 22vw;
+  }
+  .sband i {
     -webkit-text-stroke-width: 1px;
   }
 }
@@ -4577,90 +4701,15 @@ html::-webkit-scrollbar-button {
   height: 0;
 }
 
-/* ─── Cursor: an ember dot on the pointer and a ring that follows ────── */
+/* ─── Smooth cursor: the system cursor hides, the arrow takes over ──── */
 
-html.has-cursor,
-html.has-cursor * {
+html.has-smooth-cursor,
+html.has-smooth-cursor * {
   cursor: none !important;
 }
-html.has-cursor input,
-html.has-cursor textarea,
-html.has-cursor select,
-html.has-cursor [contenteditable="true"] {
+html.has-smooth-cursor input,
+html.has-smooth-cursor textarea,
+html.has-smooth-cursor select,
+html.has-smooth-cursor [contenteditable="true"] {
   cursor: text !important;
-}
-.cur-dot,
-.cur-ring {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 10000;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.3s var(--ease);
-}
-html.cursor-on .cur-dot,
-html.cursor-on .cur-ring {
-  opacity: 1;
-}
-.cur-dot {
-  width: 6px;
-  height: 6px;
-  margin: -3px 0 0 -3px;
-  border-radius: 50%;
-  background: var(--ember);
-}
-.cur-ring {
-  width: 0;
-  height: 0;
-  mix-blend-mode: difference;
-}
-.cur-ring::before {
-  content: "";
-  position: absolute;
-  left: -18px;
-  top: -18px;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1.5px solid #fff;
-  transition:
-    transform 0.35s var(--ease),
-    background 0.3s var(--ease),
-    opacity 0.3s var(--ease);
-}
-.cur-ring span {
-  position: absolute;
-  left: 0;
-  top: 0;
-  transform: translate(-50%, -50%) scale(0.6);
-  font-family: var(--font-m);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #fff;
-  opacity: 0;
-  transition:
-    opacity 0.25s var(--ease),
-    transform 0.35s var(--ease);
-}
-.cur-ring[data-mode="link"]::before {
-  transform: scale(1.55);
-  background: #fff;
-}
-.cur-ring[data-mode="drag"]::before {
-  transform: scale(2.1);
-}
-.cur-ring[data-mode="drag"] span {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
-}
-.cur-ring[data-mode="text"]::before {
-  opacity: 0;
-}
-.cur-ring.is-down::before {
-  transform: scale(0.8);
-}
-.cur-ring.is-down[data-mode="link"]::before {
-  transform: scale(1.25);
 }

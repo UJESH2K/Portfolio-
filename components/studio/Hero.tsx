@@ -78,7 +78,7 @@ export default function Hero() {
   }, []);
 
   const done = typed.length === HERO.hello.length;
-  // The name types out in the italic serif.
+  // The name gets its own treatment (see .hero__name).
   const NAME_AT = HERO.hello.indexOf("Ujesh");
 
   return (
@@ -91,7 +91,7 @@ export default function Hero() {
           <span className="sr-only">{HERO.hello}</span>
           <span aria-hidden="true">
             {typed.slice(0, NAME_AT) || " "}
-            {typed.length > NAME_AT ? <em className="hero__name">{typed.slice(NAME_AT)}</em> : null}
+            {typed.length > NAME_AT ? <em className="hero__name" data-text={typed.slice(NAME_AT)}>{typed.slice(NAME_AT)}</em> : null}
             <span className="caret" />
           </span>
         </h1>

@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
-/** Sign in to /edit. Same login and attempt limit as /admin. */
+/** Sign in to /edit: the fixed login in lib/auth.ts, with an attempt limit. */
 export default function EditLoginPage() {
   const router = useRouter();
   const [id, setId] = useState("");

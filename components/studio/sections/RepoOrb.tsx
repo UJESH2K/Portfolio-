@@ -76,6 +76,28 @@ export default function RepoOrb({
   const rings = Math.min(13, Math.max(7, Math.ceil(Math.sqrt((items.length * Math.PI) / 4)) + 1));
   const highlights = items.filter((it) => it.group === "highlight").length;
 
+  // Three picks worth a look, and what the repos are written in.
+  const spotlight = useMemo(() => {
+    const repos = items.filter((it) => it.group === "repo");
+    const starred = [...repos].sort((a, b) => (b.stars ?? 0) - (a.stars ?? 0))[0];
+    const latest = [...repos].filter((r) => r !== starred).sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))[0];
+    const pick = items.find((it) => it.group === "highlight");
+    return [
+      starred && { tag: "Most starred", item: starred, meta: `★ ${starred.stars ?? 0}` },
+      latest && { tag: "Latest push", item: latest, meta: latest.date ?? "" },
+      pick && { tag: "Hackathon pick", item: pick, meta: pick.label },
+    ].filter(Boolean) as { tag: string; item: OrbItem; meta: string }[];
+  }, [items]);
+  const langs = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const it of items) if (it.group === "repo" && it.label !== "Repo") counts.set(it.label, (counts.get(it.label) ?? 0) + 1);
+    const total = [...counts.values()].reduce((a, b) => a + b, 0) || 1;
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, n]) => ({ name, pct: Math.round((n / total) * 100) }));
+  }, [items]);
+
   const onHover = useCallback(
     (k: Keycap | null) => {
       const it = k?.meta ? byKey.get(k.meta) : undefined;
@@ -115,14 +137,44 @@ export default function RepoOrb({
         <p className="korb__eyebrow">github.com/{user}</p>
         <h3 className="korb__title">A world I built, one repo at a time.</h3>
         <p className="korb__text">
-          Every key on this ball is something I&apos;ve made: hackathon builds, research and side projects, pulled straight from my GitHub. The ember keys
-          are the highlights. Spin it, hover a key to read it, press one to open it.
+          Every key is something I&apos;ve made, straight from my GitHub; the orange ones are the highlights. Spin it, hover a key to read it, press one
+          to open it.
         </p>
         <p className="korb__stats">
           <span>{highlights} highlights</span>
           <span>{items.length - highlights} repos</span>
           <span>synced from GitHub hourly</span>
         </p>
+
+        <ul className="korb__spot">
+          {spotlight.map((s) => (
+            <li key={s.tag}>
+              <button type="button" onClick={() => onOpen(s.item.key)} onMouseEnter={() => setActive(s.item)} onFocus={() => setActive(s.item)}>
+                <span className="korb__spottag">{s.tag}</span>
+                <span className="korb__spotname">{s.item.title}</span>
+                <span className="korb__spotmeta">{s.meta}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        {langs.length ? (
+          <div className="korb__langs">
+            <div className="korb__langbar" aria-hidden="true">
+              {langs.map((l) => (
+                <i key={l.name} style={{ width: `${l.pct}%`, background: LANG_COLOR[l.name] ?? "var(--fg-3)" }} />
+              ))}
+            </div>
+            <p>
+              {langs.map((l) => (
+                <span key={l.name}>
+                  <i style={{ background: LANG_COLOR[l.name] ?? "var(--fg-3)" }} />
+                  {l.name} <em>{l.pct}%</em>
+                </span>
+              ))}
+            </p>
+          </div>
+        ) : null}
 
         {active ? (
           <div className="korb__card" aria-live="polite">
