@@ -5,13 +5,17 @@ import { CLIENTS, CLIENTS_INTRO } from "@/lib/content";
 import { ArrowIcon, Eyebrow, Img, SplitWords } from "../primitives";
 
 /**
- * Freelance and client work as an index of names. Hovering a row floats a
- * preview of that site beside the pointer (its screen recording where there
- * is one); on touch screens each row shows its picture inline instead.
+ * Freelance and client work as an index of names. The row nearest the middle
+ * of the screen lights up as you scroll, and its site floats beside the
+ * pointer (its screen recording where there is one), so the previews play
+ * while you read, not only once you stop and hover. Hovering a row takes
+ * over. On phones the rows become cards you swipe through sideways.
  */
 export default function Clients() {
   const [hot, setHot] = useState(-1);
   const preview = useRef<HTMLDivElement>(null);
+  const list = useRef<HTMLOListElement>(null);
+  const hovering = useRef(false);
   const vids = useRef<Array<HTMLVideoElement | null>>([]);
 
   // The preview trails the pointer with a little lag.
@@ -29,19 +33,60 @@ export default function Clients() {
       y += (ty - y) * 0.16;
       el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
     };
-    const onMove = (e: PointerEvent) => {
-      tx = e.clientX + 28;
-      ty = e.clientY - 120;
+    const start = () => {
       if (!raf) {
         x = tx;
         y = ty;
         loop();
       }
     };
+    const onMove = (e: PointerEvent) => {
+      tx = Math.min(e.clientX + 28, window.innerWidth - 440);
+      ty = e.clientY - 120;
+      start();
+    };
+
+    // While scrolling, the row crossing the middle of the screen is the hot one.
+    const rows = () => Array.from(list.current?.children ?? []) as HTMLElement[];
+    let sraf = 0;
+    const pick = () => {
+      sraf = 0;
+      if (hovering.current) return;
+      const vh = window.innerHeight;
+      const box = list.current?.getBoundingClientRect();
+      if (!box || box.bottom < vh * 0.3 || box.top > vh * 0.7) {
+        setHot(-1);
+        return;
+      }
+      let best = -1;
+      let bestD = Infinity;
+      rows().forEach((r, i) => {
+        const b = r.getBoundingClientRect();
+        const d = Math.abs(b.top + b.height / 2 - vh * 0.5);
+        if (d < bestD) {
+          bestD = d;
+          best = i;
+        }
+      });
+      if (best >= 0 && !tx && !ty) {
+        // The pointer hasn't moved yet: float the preview on the right.
+        tx = window.innerWidth * 0.62;
+        ty = vh * 0.5 - 120;
+        start();
+      }
+      setHot(best);
+    };
+    const onScroll = () => {
+      if (!sraf) sraf = requestAnimationFrame(pick);
+    };
+
     window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       cancelAnimationFrame(raf);
+      cancelAnimationFrame(sraf);
       window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("scroll", onScroll);
     };
   }, []);
 
@@ -68,7 +113,15 @@ export default function Clients() {
           </p>
         </div>
 
-        <ol className="clients__list" onPointerLeave={() => setHot(-1)}>
+        <ol
+          ref={list}
+          className={`clients__list${hot >= 0 ? " has-hot" : ""}`}
+          onPointerEnter={() => (hovering.current = true)}
+          onPointerLeave={() => {
+            hovering.current = false;
+            setHot(-1);
+          }}
+        >
           {CLIENTS.map((c, i) => {
             const href = c.live ?? c.code;
             return (

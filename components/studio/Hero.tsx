@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { HERO, LANDING, type BalloonBeat } from "@/lib/content";
 import { goTo, robotPoke, useRobot } from "@/lib/robot";
-import CursorTrail from "./CursorTrail";
 
 /**
  * The landing page: warm white paper, the headline typing out on the left,
@@ -83,8 +82,6 @@ export default function Hero() {
 
   return (
     <section id="top" className="hero" data-cue="hero" aria-label="Introduction">
-      <CursorTrail />
-
       <div className="wrap hero__content">
         <p className="hero__eyebrow">{LANDING.eyebrow}</p>
         <h1 className="hero__title">

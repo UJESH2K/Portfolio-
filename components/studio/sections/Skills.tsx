@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { SKILL_GROUPS } from "@/lib/content";
-import { RESUME } from "@/lib/resume";
-import { Cta, Eyebrow, SplitWords } from "../primitives";
+import { Eyebrow, SplitWords } from "../primitives";
+import ResumeCta from "../ResumeCta";
 
 export default function Skills() {
   return (
@@ -14,9 +14,7 @@ export default function Skills() {
               <SplitWords text="Tools I *reach for.*" />
             </h2>
           </div>
-          <Cta href={RESUME.href} width={300} download={RESUME.download} external={RESUME.external}>
-            {RESUME.label}
-          </Cta>
+          <ResumeCta width={300} />
         </div>
         <div className="skills__grid">
           {SKILL_GROUPS.map((g, i) => (

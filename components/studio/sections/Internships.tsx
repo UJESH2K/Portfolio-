@@ -17,7 +17,8 @@ export default function Internships() {
           </h2>
           <p className="lede">{INTERNSHIPS_INTRO.text}</p>
           <p className="hpanel__hint" aria-hidden="true">
-            Keep scrolling →
+            <span className="hint-desk">Keep scrolling →</span>
+            <span className="hint-touch">Swipe for more →</span>
           </p>
         </div>
         {INTERNSHIPS.map((r, i) => (

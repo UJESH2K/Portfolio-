@@ -3,6 +3,7 @@ import RevealObserver from "@/components/studio/RevealObserver";
 import ScrollFx from "@/components/studio/ScrollFx";
 import SmoothCursor from "@/components/ui/smooth-cursor";
 import Band from "@/components/studio/BgWord";
+import ResumePicker from "@/components/studio/ResumePicker";
 import Preloader from "@/components/studio/Preloader";
 import Chrome from "@/components/studio/Chrome";
 import Hero from "@/components/studio/Hero";
@@ -39,6 +40,7 @@ export default async function Home() {
       <RevealObserver />
       <ScrollFx />
       <SmoothCursor />
+      <ResumePicker />
       <Preloader />
       <Chrome />
       <RobotLayer />

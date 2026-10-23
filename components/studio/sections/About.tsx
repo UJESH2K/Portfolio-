@@ -1,6 +1,6 @@
 import { ABOUT } from "@/lib/content";
-import { RESUME } from "@/lib/resume";
-import { Cta, Img, SplitWords } from "../primitives";
+import { Img, SplitWords } from "../primitives";
+import ResumeCta from "../ResumeCta";
 import Scramble from "../Scramble";
 
 /**
@@ -33,9 +33,7 @@ export default function About() {
               {ABOUT.education.school} · {ABOUT.education.period}
             </div>
             <div className="about__row">
-              <Cta href={RESUME.href} width={260} download={RESUME.download} external={RESUME.external}>
-                {RESUME.label}
-              </Cta>
+              <ResumeCta width={260} />
             </div>
           </div>
 

@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, MouseEvent, ReactNode } from "react";
 
 /**
  * Server-safe building blocks. Anything with a `data-rv` attribute is picked
@@ -71,7 +71,7 @@ export function Cta({
   width?: number;
   external?: boolean;
   download?: boolean;
-  onClick?: () => void;
+  onClick?: (e: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const style = width ? ({ "--cta-w": `${width}px` } as CSSProperties) : undefined;
   return (

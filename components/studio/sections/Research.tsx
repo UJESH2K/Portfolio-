@@ -25,7 +25,8 @@ export default function Research() {
           </h2>
           <p className="lede">{RESEARCH_INTRO.text}</p>
           <p className="hpanel__hint" aria-hidden="true">
-            Keep scrolling →
+            <span className="hint-desk">Keep scrolling →</span>
+            <span className="hint-touch">Swipe for more →</span>
           </p>
         </div>
         <figure className="hphoto hphoto--wide research__photo" data-imgfx data-rv>

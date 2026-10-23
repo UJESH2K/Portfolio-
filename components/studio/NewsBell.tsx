@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { NEWS, SOCIALS, isMissing } from "@/lib/content";
 import { goTo } from "@/lib/robot";
+import { ResumeButton } from "./ResumePicker";
 
 const SEEN_KEY = "ujesh:news-seen";
 
@@ -57,10 +58,9 @@ export default function NewsBell() {
     };
   }, [open, latest]);
 
-  if (!NEWS.length && (!youtube || isMissing(youtube.href))) return null;
-
   return (
     <div className="newsbell">
+      <ResumeButton />
       {youtube && !isMissing(youtube.href) ? (
         <a className="newsbell__yt" href={youtube.href} target="_blank" rel="noopener noreferrer" aria-label="YouTube channel">
           <YouTubeIcon />

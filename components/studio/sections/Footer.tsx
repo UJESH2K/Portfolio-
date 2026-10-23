@@ -1,6 +1,7 @@
 import { CLIENTS, FOOTER, PROFILE, SITE_NAV, SOCIALS, WORK, isMissing } from "@/lib/content";
 import type { CSSProperties } from "react";
 import { RESUME } from "@/lib/resume";
+import { ResumeLink } from "../ResumePicker";
 import { ArrowIcon } from "../primitives";
 
 /** The latest things worth opening, each linked to the real thing. */
@@ -71,14 +72,7 @@ export default function Footer() {
               </li>
               <li>{PROFILE.location}</li>
               <li>
-                <a
-                  href={RESUME.href}
-                  download={RESUME.download || undefined}
-                  target={RESUME.external ? "_blank" : undefined}
-                  rel={RESUME.external ? "noopener noreferrer" : undefined}
-                >
-                  {RESUME.short}
-                </a>
+                <ResumeLink href={RESUME.href}>Résumés</ResumeLink>
               </li>
               {FOOTER.credits.map((c) => (
                 <li key={c.href} className="footer__credit">

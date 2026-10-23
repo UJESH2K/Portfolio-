@@ -19,7 +19,8 @@ export default function Leadership() {
           </h2>
           <p className="lede">{LEADERSHIP_INTRO.text}</p>
           <p className="hpanel__hint" aria-hidden="true">
-            Keep scrolling →
+            <span className="hint-desk">Keep scrolling →</span>
+            <span className="hint-touch">Swipe for more →</span>
           </p>
         </div>
         {first ? (
