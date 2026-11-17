@@ -60,8 +60,8 @@ export const PROFILE = {
   avatarUrl: "/avatar.png",
   githubJoined: "December 2023",
   publicRepos: 65,
-  /** Put your PDF at /public/resume.pdf. */
-  resumeUrl: "/resume.pdf",
+  /** Every résumé, to view or download (PDFs in /public/resumes). */
+  resumeUrl: "/resume",
 } as const;
 
 /** Background-removed portrait for the hero. Until it exists, Cutout falls

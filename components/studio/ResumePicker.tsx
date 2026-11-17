@@ -53,7 +53,7 @@ export default function ResumePicker() {
   useEffect(() => {
     const onOpen = () => {
       const room = Math.min(640, window.innerWidth - 32) - 2 * Math.min(36, Math.max(22, window.innerWidth * 0.04));
-      setSpread(Math.max(40, Math.min(76, Math.floor((room - 132) / 3 / 1.15))));
+      setSpread(Math.max(40, Math.min(76, Math.floor((room - 132) / Math.max(1, RESUMES.length - 1) / 1.15))));
       setOpen(true);
     };
     window.addEventListener(RESUME_EVENT, onOpen);
@@ -105,7 +105,7 @@ export default function ResumePicker() {
         <h2 id="rmodal-title" className="rmodal__title">
           Pick the one <em>that fits.</em>
         </h2>
-        <p className="rmodal__lede">Four versions of the same story, each cut for a different role. Open one in the browser or download the PDF.</p>
+        <p className="rmodal__lede">Three versions of the same story, each cut for a different role. Open one in the browser or download the PDF.</p>
 
         <div className="rmodal__folder">
           <IconFolder theme="light" title="Ujesh's résumés" tags={RESUMES.map((r) => r.title)} icons={icons} defaultOpen spread={spread} showPill={false} onIconClick={openPdf} />
@@ -146,6 +146,14 @@ export default function ResumePicker() {
             );
           })}
         </ul>
+
+        <a className="rmodal__page" href="/resume">
+          <span>
+            <b>See them all on one page</b>
+            <span>ujesh.in/resume · a link you can share</span>
+          </span>
+          <span aria-hidden="true">→</span>
+        </a>
       </div>
     </div>,
     document.body,

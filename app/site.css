@@ -5097,3 +5097,291 @@ html.has-smooth-cursor [contenteditable="true"] {
     display: inline;
   }
 }
+
+/* The picker's link to the /resume page. (The picker lives outside .site.) */
+.rmodal__page {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--white);
+  box-shadow: 0 0 0 1px var(--line);
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    background 0.3s var(--ease),
+    color 0.3s var(--ease);
+}
+.rmodal__page > span:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.rmodal__page b {
+  font-family: var(--font-h);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.rmodal__page span span {
+  font-size: 13px;
+  color: var(--fg-2);
+  transition: color 0.3s var(--ease);
+}
+.rmodal__page > span:last-child {
+  font-size: 18px;
+  transition: transform 0.35s var(--spring);
+}
+@media (hover: hover) {
+  .rmodal__page:hover {
+    background: var(--ink);
+    color: var(--white);
+  }
+  .rmodal__page:hover span span {
+    color: rgba(255, 255, 255, 0.7);
+  }
+  .rmodal__page:hover > span:last-child {
+    transform: translateX(4px);
+  }
+}
+
+/* ─── /resume: every résumé on one page ──────────────────────────────── */
+
+.rsite {
+  min-height: 100vh;
+  min-height: 100svh;
+}
+.rtop {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px var(--gutter);
+  background: rgba(242, 240, 234, 0.86);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.rtop__home {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--white);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  transition:
+    background 0.3s var(--ease),
+    color 0.3s var(--ease),
+    border-color 0.3s var(--ease);
+}
+.rtop__home span {
+  transition: transform 0.35s var(--spring);
+}
+.rtop__name {
+  font-family: var(--font-m);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (hover: hover) {
+  .rtop__home:hover {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--white);
+  }
+  .rtop__home:hover span {
+    transform: translateX(-3px);
+  }
+}
+
+.rview {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+  gap: clamp(28px, 4vw, 64px);
+  align-items: start;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: clamp(28px, 4vw, 56px) var(--gutter) 72px;
+}
+.rview__side {
+  position: sticky;
+  top: 96px;
+}
+.rview__title {
+  margin-top: 10px;
+  font-family: var(--font-h);
+  font-weight: 500;
+  font-size: clamp(34px, 4vw, 52px);
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+.rview__title em {
+  font-family: var(--font-s);
+  font-weight: 400;
+  color: var(--ember-deep);
+}
+.rview__lede {
+  margin-top: 14px;
+  max-width: 40ch;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--fg-2);
+}
+.rview__tabs {
+  display: flex;
+  flex-direction: column;
+  margin-top: 26px;
+  border-top: 1px solid var(--line);
+}
+.rview__tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--line);
+  transition: background 0.3s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.rview__tab::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--ember);
+  transform: scaleY(0);
+  transition: transform 0.35s var(--ease);
+}
+.rview__tab[aria-current="page"] {
+  background: var(--white);
+}
+.rview__tab[aria-current="page"]::before {
+  transform: scaleY(1);
+}
+@media (hover: hover) {
+  .rview__tab:not([aria-current="page"]):hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+}
+.rview__about {
+  margin-top: 20px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+.rview__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+.rview__actions .plink {
+  justify-content: center;
+}
+.rview__main {
+  min-width: 0;
+}
+.rview__sheet {
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--white);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 40px 90px -50px rgba(40, 25, 10, 0.45);
+  animation: rmodal-in 0.5s var(--ease) both;
+}
+.rview__sheet iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 0.68;
+  min-height: 640px;
+  border: 0;
+  background: var(--white);
+}
+.rview__sheet img {
+  width: 100%;
+  height: auto;
+}
+.rview__hint {
+  margin-top: 12px;
+  text-align: center;
+  font-family: var(--font-m);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+
+@media (max-width: 899px) {
+  .rview {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    padding-bottom: 48px;
+  }
+  .rview__side {
+    position: static;
+  }
+  .rview__tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 22px;
+    border-top: 0;
+  }
+  .rview__tab {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 6px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    text-align: center;
+  }
+  .rview__tab::before {
+    display: none;
+  }
+  .rview__tab[aria-current="page"] {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 1px var(--ink);
+  }
+  .rview__tab .rmodal__tile {
+    width: 36px;
+    height: 42px;
+    font-size: 10px;
+  }
+  .rview__tab .rmodal__name b {
+    font-size: 15px;
+    line-height: 1.15;
+  }
+  .rview__tab .rmodal__name span {
+    display: none;
+  }
+  .rview__actions .plink {
+    flex: 1 1 0;
+    padding-left: 10px;
+    padding-right: 10px;
+    white-space: nowrap;
+  }
+}
+@media (max-width: 360px) {
+  .rview__actions .plink {
+    flex-basis: 40%;
+  }
+}
